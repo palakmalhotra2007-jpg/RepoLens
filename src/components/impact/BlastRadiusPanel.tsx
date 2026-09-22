@@ -29,7 +29,6 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
     sendChatMessage, 
     repo,
     setIsRightPanelOpen,
-    setRightPanelTab,
   } = useRepoStore();
 
   const activeRadius: BlastRadiusResult = selectedNodeId
@@ -170,9 +169,16 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
         <Button
           variant="primary"
           onClick={() => {
-            sendChatMessage(`What are the step-by-step changes and risks if I modify ${activeRadius.targetLabel}?`);
-            setIsRightPanelOpen(true);
-            setRightPanelTab('chat');
+            try {
+              console.log('[BlastRadius] Ask AI button clicked, sending message to chat...');
+              sendChatMessage(`What are the step-by-step changes and risks if I modify ${activeRadius.targetLabel}?`);
+              // Auto-open chat panel when asking AI
+              setIsRightPanelOpen(true);
+              console.log('[BlastRadius] Right panel opened');
+            } catch (error) {
+              console.error('[BlastRadius] Error in Ask AI button:', error);
+              alert(`Failed to send message to AI: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
           }}
           className="w-full gap-2 py-2"
         >

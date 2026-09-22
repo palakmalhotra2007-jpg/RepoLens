@@ -113,7 +113,7 @@ Flexible configuration options:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/repolens.git
+   git clone https://github.com/palakmalhotra2007-jpg/repolens.git
    cd repolens
    ```
 
@@ -323,7 +323,3 @@ This project is licensed under the MIT License.
 ## 📞 Support
 
 For questions, issues, or feature requests, please open an issue on GitHub.
-
----
-
-**Made with ❤️ for developers who love understanding their code**

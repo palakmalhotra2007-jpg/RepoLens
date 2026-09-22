@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
 import { Button } from '../../frontend';
 import {
@@ -8,17 +8,56 @@ import {
   Check,
 } from 'lucide-react';
 
+// Settings type definition
+type ReviewStrictness = 'strict' | 'standard' | 'relaxed';
+
+interface AppSettings {
+  reviewStrictness: ReviewStrictness;
+  enableCrossVerification: boolean;
+  semanticDriftThreshold: number;
+}
+
 export const SettingsModal: React.FC = () => {
   const { isSettingsModalOpen, setIsSettingsModalOpen } = useRepoStore();
 
-  const [sensitivity, setSensitivity] = useState<'strict' | 'standard' | 'relaxed'>('strict');
-  const [autoDebate, setAutoDebate] = useState(true);
-  const [semanticDriftThreshold, setSemanticDriftThreshold] = useState('0.85');
+  // Load settings from localStorage or use defaults
+  const loadSettings = (): AppSettings => {
+    try {
+      const stored = localStorage.getItem('repolens_settings');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+    return {
+      reviewStrictness: 'relaxed',
+      enableCrossVerification: true,
+      semanticDriftThreshold: 0.71,
+    };
+  };
+
+  const [settings, setSettings] = useState<AppSettings>(loadSettings());
   const [saved, setSaved] = useState(false);
+
+  // Sync settings when modal opens
+  useEffect(() => {
+    if (isSettingsModalOpen) {
+      setSettings(loadSettings());
+    }
+  }, [isSettingsModalOpen]);
 
   if (!isSettingsModalOpen) return null;
 
   const handleSave = () => {
+    // Save to localStorage
+    try {
+      localStorage.setItem('repolens_settings', JSON.stringify(settings));
+      console.log('Settings saved:', settings);
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+    }
+
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -60,11 +99,11 @@ export const SettingsModal: React.FC = () => {
               {(['strict', 'standard', 'relaxed'] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setSensitivity(s)}
-                  className={`p-2.5 rounded-[6px] border capitalize transition-colors ${
-                    sensitivity === s
-                      ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
-                      : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
+                  onClick={() => setSettings({ ...settings, reviewStrictness: s })}
+                  className={`p-2.5 rounded-xl border capitalize transition-all ${
+                    settings.reviewStrictness === s
+                      ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200 font-bold'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   {s}
@@ -83,26 +122,26 @@ export const SettingsModal: React.FC = () => {
             </div>
             <input
               type="checkbox"
-              checked={autoDebate}
-              onChange={(e) => setAutoDebate(e.target.checked)}
-              className="w-4 h-4 accent-[#4FA3D9] rounded cursor-pointer"
+              checked={settings.enableCrossVerification}
+              onChange={(e) => setSettings({ ...settings, enableCrossVerification: e.target.checked })}
+              className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
             />
           </div>
 
           {/* Semantic Drift Sensitivity Slider */}
           <div className="space-y-2">
             <div className="flex justify-between font-mono">
-              <span className="font-medium text-text-primary">Semantic Conflict Sensitivity</span>
-              <span className="text-accent font-medium">{semanticDriftThreshold}</span>
+              <span className="font-semibold text-slate-200">Semantic Conflict Sensitivity</span>
+              <span className="text-indigo-400 font-bold">{settings.semanticDriftThreshold.toFixed(2)}</span>
             </div>
             <input
               type="range"
               min="0.5"
               max="0.99"
               step="0.01"
-              value={semanticDriftThreshold}
-              onChange={(e) => setSemanticDriftThreshold(e.target.value)}
-              className="w-full accent-[#4FA3D9] cursor-pointer"
+              value={settings.semanticDriftThreshold}
+              onChange={(e) => setSettings({ ...settings, semanticDriftThreshold: parseFloat(e.target.value) })}
+              className="w-full accent-indigo-500 cursor-pointer"
             />
             <span className="text-[10px] text-text-tertiary font-mono block">
               Lower detects subtle contract divergences; higher requires near-certain runtime failure.

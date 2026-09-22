@@ -27,6 +27,7 @@ export const TopNav: React.FC = () => {
     comparisonState,
     branchComparison,
     voicePlayback,
+    activeView,
     stopAudioPlayback,
   } = useRepoStore();
 
@@ -122,18 +123,18 @@ export const TopNav: React.FC = () => {
       </div>
 
       {/* Middle: Universal Search / Cmd+K Launcher */}
-      <div className="flex-1 max-w-sm mx-4 hidden md:block">
+      <div className="flex-1 max-w-2xl mx-6 hidden md:block">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-[6px] bg-bg-surface-2 hover:bg-[#262B31] border border-border-default text-text-secondary text-xs transition-colors group"
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] text-slate-400 text-sm transition-all group"
         >
-          <div className="flex items-center gap-2">
-            <Search strokeWidth={1.5} className="w-4 h-4 text-text-secondary group-hover:text-text-primary" />
-            <span className="text-text-secondary group-hover:text-text-primary truncate">
+          <div className="flex items-center gap-2.5">
+            <Search className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
+            <span className="text-slate-400 group-hover:text-slate-200 truncate">
               Search files, symbols, routes, or ask AI...
             </span>
           </div>
-          <kbd className="px-1.5 py-0.2 rounded-[4px] bg-bg-surface border border-border-default text-[10px] font-mono text-text-tertiary">
+          <kbd className="px-2 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[10px] font-mono text-slate-400">
             ⌘K
           </kbd>
         </button>
@@ -166,22 +167,24 @@ export const TopNav: React.FC = () => {
           <Settings strokeWidth={1.5} className="w-4 h-4" />
         </button>
 
-        {/* Right Context Drawer Toggle */}
-        <button
-          onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-          className={`p-1.5 rounded-[6px] transition-colors ${
-            isRightPanelOpen
-              ? 'bg-bg-surface-2 text-accent border border-accent/30'
-              : 'hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary'
-          }`}
-          title="Toggle Context Drawer"
-        >
-          {isRightPanelOpen ? (
-            <PanelRightClose strokeWidth={1.5} className="w-4 h-4" />
-          ) : (
-            <PanelRightOpen strokeWidth={1.5} className="w-4 h-4" />
-          )}
-        </button>
+        {/* Right Context Drawer Toggle - Only shown in Impact view */}
+        {activeView === 'impact' && (
+          <button
+            onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+            className={`p-1.5 rounded transition-colors ${
+              isRightPanelOpen
+                ? 'bg-indigo-600/20 text-indigo-300'
+                : 'hover:bg-[#21262d] text-slate-400 hover:text-slate-200'
+            }`}
+            title="Toggle Context Drawer"
+          >
+            {isRightPanelOpen ? (
+              <PanelRightClose className="w-4 h-4" />
+            ) : (
+              <PanelRightOpen className="w-4 h-4" />
+            )}
+          </button>
+        )}
       </div>
     </header>
   );

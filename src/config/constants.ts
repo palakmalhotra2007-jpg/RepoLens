@@ -40,7 +40,6 @@ export const APP_CONFIG = {
   // UI Configuration
   ui: {
     defaultView: (import.meta.env.VITE_DEFAULT_VIEW as any) || 'overview',
-    rightPanelDefaultTab: (import.meta.env.VITE_RIGHT_PANEL_DEFAULT as any) || 'symbols',
     animationDuration: parseInt(import.meta.env.VITE_ANIMATION_DURATION || '300'),
   },
 

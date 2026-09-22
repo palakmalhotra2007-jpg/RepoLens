@@ -352,13 +352,17 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
   }
 
   // Enhanced fallback: Ensure EVERY node is connected with multiple redundant connections
-  const connectedNodes = new Set<string>();
-  edges.forEach(e => {
-    connectedNodes.add(e.source);
-    connectedNodes.add(e.target);
-  });
+  const getConnectedNodes = () => {
+    const connected = new Set<string>();
+    edges.forEach(e => {
+      connected.add(e.source);
+      connected.add(e.target);
+    });
+    return connected;
+  };
 
-  const disconnectedNodes = nodes.filter(n => !connectedNodes.has(n.id));
+  let connectedNodes = getConnectedNodes();
+  let disconnectedNodes = nodes.filter(n => !connectedNodes.has(n.id));
   
   // Phase 1: Connect all disconnected nodes to their nearest layer neighbors
   for (const isolatedNode of disconnectedNodes) {
@@ -374,40 +378,44 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
     if (sameLayerNodes.length > 0) {
       const nearest = sameLayerNodes[0];
       const edgeId = `e-${nearest.id}-${isolatedNode.id}`;
-      edgeSet.add(edgeId);
-      edges.push({
-        id: edgeId,
-        source: nearest.id,
-        target: isolatedNode.id,
-        style: { stroke: '#64748b', strokeWidth: 1.5 },
-      });
-      connectedNodes.add(isolatedNode.id);
+      if (!edgeSet.has(edgeId)) {
+        edgeSet.add(edgeId);
+        edges.push({
+          id: edgeId,
+          source: nearest.id,
+          target: isolatedNode.id,
+          style: { stroke: '#64748b', strokeWidth: 1.5 },
+        });
+      }
     }
   }
 
-  // Phase 2: Connect remaining isolated nodes to ANY node (ultimate fallback)
-  for (const node of nodes) {
-    if (!connectedNodes.has(node.id)) {
-      const anyConnectedNode = Array.from(connectedNodes)[0];
-      if (anyConnectedNode) {
-        const targetNode = nodes.find(n => n.id === anyConnectedNode);
-        if (targetNode) {
-          const edgeId = `e-${targetNode.id}-${node.id}`;
+  // Phase 2: Connect remaining isolated nodes to ANY connected node (ultimate fallback)
+  connectedNodes = getConnectedNodes();
+  disconnectedNodes = nodes.filter(n => !connectedNodes.has(n.id));
+  
+  for (const isolatedNode of disconnectedNodes) {
+    const connectedNodesArray = Array.from(connectedNodes);
+    if (connectedNodesArray.length > 0) {
+      const targetNode = nodes.find(n => n.id === connectedNodesArray[0]);
+      if (targetNode) {
+        const edgeId = `e-${targetNode.id}-${isolatedNode.id}`;
+        if (!edgeSet.has(edgeId)) {
           edgeSet.add(edgeId);
           edges.push({
             id: edgeId,
             source: targetNode.id,
-            target: node.id,
+            target: isolatedNode.id,
             style: { stroke: '#64748b', strokeWidth: 1.5 },
           });
-          connectedNodes.add(node.id);
         }
       }
     }
   }
 
-  // Phase 3: Create a backbone connection chain if graph is still sparse
-  if (edges.length < nodes.length - 1) {
+  // Phase 3: Create a backbone connection chain if graph is still sparse or disconnected
+  // This ensures minimum spanning tree connectivity
+  if (edges.length < nodes.length - 1 || getConnectedNodes().size < nodes.length) {
     for (let i = 0; i < nodes.length - 1; i++) {
       const source = nodes[i];
       const target = nodes[i + 1];
@@ -421,6 +429,28 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
           source: source.id,
           target: target.id,
           style: { stroke: '#475569', strokeWidth: 1.2 },
+        });
+      }
+    }
+  }
+  
+  // Phase 4: Verify connectivity and add circular backbone if needed
+  connectedNodes = getConnectedNodes();
+  if (connectedNodes.size < nodes.length && nodes.length > 1) {
+    // Force connect all nodes in a circular chain as absolute last resort
+    for (let i = 0; i < nodes.length; i++) {
+      const source = nodes[i];
+      const target = nodes[(i + 1) % nodes.length];
+      const edgeId = `e-${source.id}-${target.id}`;
+      const reverseId = `e-${target.id}-${source.id}`;
+      
+      if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+        edgeSet.add(edgeId);
+        edges.push({
+          id: edgeId,
+          source: source.id,
+          target: target.id,
+          style: { stroke: '#374151', strokeWidth: 1 },
         });
       }
     }

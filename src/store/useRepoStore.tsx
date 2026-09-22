@@ -150,17 +150,44 @@ const voiceEngine = (() => {
         // Configure speech recognition
         recognitionInstance = new SpeechRecognition();
         recognitionInstance.continuous = false;      // Single phrase capture
-        recognitionInstance.interimResults = false;  // Only final results
+        recognitionInstance.interimResults = true;   // Enable interim results for better feedback
         recognitionInstance.lang = 'en-US';
         recognitionInstance.maxAlternatives = 1;     // Best match only
 
+        recognitionInstance.onstart = () => {
+          console.log('[Voice Input] Recognition started successfully');
+        };
+
         recognitionInstance.onresult = (event: any) => {
-          const transcript = event.results[0]?.[0]?.transcript || '';
-          if (transcript.trim()) {
+          console.log('[Voice Input] Result received:', event.results);
+          const result = event.results[event.results.length - 1];
+          const transcript = result[0]?.transcript || '';
+          
+          console.log('[Voice Input] Transcript:', transcript, 'Is final:', result.isFinal);
+          
+          // Only process final results
+          if (result.isFinal && transcript.trim()) {
             onResult(transcript);
           }
         };
 
+        recognitionInstance.onspeechstart = () => {
+          console.log('[Voice Input] Speech detected, processing...');
+        };
+
+        recognitionInstance.onspeechend = () => {
+          console.log('[Voice Input] Speech ended');
+        };
+
+        recognitionInstance.onaudiostart = () => {
+          console.log('[Voice Input] Audio capture started');
+        };
+
+        recognitionInstance.onaudioend = () => {
+          console.log('[Voice Input] Audio capture ended');
+        };
+
+        // Handle recognition errors with user-friendly messages
         recognitionInstance.onerror = (event: any) => {
           console.error('[Voice Input] Error:', event.error);
           let errorMessage = 'Voice input failed. ';
@@ -171,7 +198,7 @@ const voiceEngine = (() => {
               errorMessage += 'Microphone permission denied. Please allow microphone access in your browser settings.';
               break;
             case 'no-speech':
-              errorMessage += 'No speech detected. Please try again.';
+              errorMessage += 'No speech detected. Please speak clearly and try again.';
               break;
             case 'audio-capture':
               errorMessage += 'No microphone found. Please check your audio devices.';
@@ -190,18 +217,21 @@ const voiceEngine = (() => {
         };
 
         recognitionInstance.onend = () => {
+          console.log('[Voice Input] Recognition ended');
           recognitionInstance = null;
           onEnd();
         };
 
         recognitionInstance.start();
-        console.log('[Voice Input] Started listening...');
+        console.log('[Voice Input] Starting recognition...');
       } catch (e) {
         console.error('[Voice Input] Exception:', e);
         onError(`Failed to start voice input: ${e}`);
         onEnd();
       }
     },
+
+    // Stop listening to voice input
     stopListening: () => {
       if (recognitionInstance) {
         try {
@@ -215,31 +245,33 @@ const voiceEngine = (() => {
   };
 })();
 
+// Available application views/screens
 export type AppView = 
-  | 'overview' 
-  | 'explore' 
-  | 'review' 
-  | 'debate' 
-  | 'merge' 
-  | 'impact' 
-  | 'history' 
-  | 'copilot'
-  | 'chat';
+  | 'overview'   // Repository dashboard
+  | 'explore'    // File browser and code viewer
+  | 'review'     // Multi-agent code review findings
+  | 'debate'     // Agent debate visualization
+  | 'merge'      // Merge conflict resolution
+  | 'impact'     // Change impact analysis graph
+  | 'history'    // Git commit history
+  | 'copilot'    // AI chat assistant
+  | 'chat';      // Alternative chat view
 
+// Main store context type - defines all state and actions available throughout the app
 interface RepoStoreContextType {
-  // Repository
-  repo: RepositoryData;
-  activeView: AppView;
+  // === Repository State ===
+  repo: RepositoryData;                          // Current repository data
+  activeView: AppView;                           // Currently displayed view
   setActiveView: (view: AppView) => void;
-  activeFile: FileNode | null;
+  activeFile: FileNode | null;                   // Currently open file in editor
   setActiveFile: (file: FileNode | null) => void;
-  activeLine: number | null;
+  activeLine: number | null;                     // Highlighted line number
   setActiveLine: (line: number | null) => void;
-  selectFileByPath: (path: string, line?: number) => void;
-  switchRepo: (newRepo: RepositoryData) => void;
-  switchBranch: (branch: string) => void;
+  selectFileByPath: (path: string, line?: number) => void; // Navigate to file
+  switchRepo: (newRepo: RepositoryData) => void;           // Load different repository
+  switchBranch: (branch: string) => void;                  // Change active branch
 
-  // Modals & Panels
+  // === UI Modals & Panels ===
   isCommandPaletteOpen: boolean;
   setIsCommandPaletteOpen: (open: boolean) => void;
   isConnectModalOpen: boolean;
@@ -248,49 +280,45 @@ interface RepoStoreContextType {
   setIsSettingsModalOpen: (open: boolean) => void;
   isLLMSettingsModalOpen: boolean;
   setIsLLMSettingsModalOpen: (open: boolean) => void;
-  isVoiceSettingsModalOpen: boolean;
-  setIsVoiceSettingsModalOpen: (open: boolean) => void;
   isRightPanelOpen: boolean;
   setIsRightPanelOpen: (open: boolean) => void;
-  rightPanelTab: 'chat' | 'debate' | 'symbols';
-  setRightPanelTab: (tab: 'chat' | 'debate' | 'symbols') => void;
 
-  // Voice & Audio
+  // === Voice & Audio ===
   voiceSettings: VoiceSettings;
   setVoiceSettings: (settings: VoiceSettings) => void;
-  voicePlayback: VoicePlayback;
-  speakAgentBriefing: (text: string, agentId: AgentId) => void;
-  playMultiAgentDebate: (finding: ReviewFinding) => Promise<void>;
+  voicePlayback: VoicePlayback;                              // Current playback state
+  speakAgentBriefing: (text: string, agentId: AgentId) => void; // Speak text aloud
+  playMultiAgentDebate: (finding: ReviewFinding) => Promise<void>; // Play debate audio
   stopAudioPlayback: () => void;
-  isRecordingVoice: boolean;
-  startVoiceInput: (targetAgentId?: AgentId) => void;
+  isRecordingVoice: boolean;                                 // Microphone recording status
+  startVoiceInput: () => void;                               // Start voice recording
   stopVoiceInput: () => void;
 
-  // Multi-Agent Review
-  reviewState: ReviewState;
-  reviewFindings: ReviewFinding[];
-  orchestrationSummary: OrchestrationSummary;
-  selectedFinding: ReviewFinding | null;
+  // === Multi-Agent Review System ===
+  reviewState: ReviewState;                                  // Review execution state
+  reviewFindings: ReviewFinding[];                           // All findings from agents
+  orchestrationSummary: OrchestrationSummary;                // Overall review summary
+  selectedFinding: ReviewFinding | null;                     // Currently selected issue
   setSelectedFinding: (finding: ReviewFinding | null) => void;
-  agentFilter: AgentId | 'all';
+  agentFilter: AgentId | 'all';                              // Filter by agent type
   setAgentFilter: (filter: AgentId | 'all') => void;
-  severityFilter: SeverityLevel | 'all';
+  severityFilter: SeverityLevel | 'all';                     // Filter by severity
   setSeverityFilter: (filter: SeverityLevel | 'all') => void;
-  isReviewRunning: boolean;
+  isReviewRunning: boolean;                                  // Review in progress
   reviewProgress: { label: string; percent: number; stage: string };
-  runReview: () => Promise<void>;
-  applyFix: (findingId: string) => void;
-  dismissFinding: (findingId: string) => void;
+  runReview: () => Promise<void>;                            // Trigger 5-agent review
+  applyFix: (findingId: string) => void;                     // Apply suggested fix
+  dismissFinding: (findingId: string) => void;               // Dismiss issue
 
-  // Agent Debate View
-  activeDebateFinding: ReviewFinding | null;
+  // === Agent Debate View ===
+  activeDebateFinding: ReviewFinding | null;                 // Finding being debated
   setActiveDebateFinding: (finding: ReviewFinding | null) => void;
-  activeDebateStageIndex: number;
+  activeDebateStageIndex: number;                            // Current debate stage
   setActiveDebateStageIndex: (index: number) => void;
 
-  // Merge Conflicts & Branch Comparison
-  comparisonState: ComparisonState;
-  branchComparison: BranchComparison;
+  // === Merge Conflicts & Branch Comparison ===
+  comparisonState: ComparisonState;                          // Comparison status
+  branchComparison: BranchComparison;                        // Branch diff results
   selectedConflict: MergeConflictBlock | null;
   setSelectedConflict: (c: MergeConflictBlock | null) => void;
   selectedSemanticAlert: SemanticConflictAlert | null;
@@ -299,26 +327,32 @@ interface RepoStoreContextType {
   resetComparison: () => void;
   resolveConflictBlock: (conflictId: string, resolution: 'ours' | 'theirs' | 'ai' | 'custom', customCode?: string) => void;
 
-  // Impact Analysis & Change Assistant
-  selectedImpactNodeId: string | null;
+  // === Impact Analysis & Change Planning ===
+  selectedImpactNodeId: string | null;                       // Selected graph node
   setSelectedImpactNodeId: (id: string | null) => void;
-  activeChangePlan: FeatureChangePlan | null;
+  activeChangePlan: FeatureChangePlan | null;                // Generated change plan
   setActiveChangePlan: (plan: FeatureChangePlan | null) => void;
-  generateChangePlanForPrompt: (prompt: string) => void;
+  generateChangePlanForPrompt: (prompt: string) => void;     // AI-generate change plan
 
-  // AI Chat & Jump Actions
-  chatMessages: ChatMessage[];
-  sendChatMessage: (content: string, targetAgentId?: AgentId) => void;
+  // === AI Chat & Navigation ===
+  chatMessages: ChatMessage[];                               // Chat history
+  sendChatMessage: (content: string) => void;
   clearChat: () => void;
-  handleJumpAction: (action: JumpAction) => void;
+  handleJumpAction: (action: JumpAction) => void;            // Navigate from chat links
 }
 
+// Create React context for global state
 const RepoContext = createContext<RepoStoreContextType | undefined>(undefined);
 
+// Provider component that wraps the app and provides state to all children
 export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to TaskFlow demo repository on launch
+  
+  // === Core Repository State ===
+  // Initialize with demo repository on first load
   const [repo, setRepo] = useState<RepositoryData>(comprehensiveDemoRepo);
-  const [activeView, setActiveView] = useState<AppView>(APP_CONFIG.ui.defaultView);
+  const [activeView, setActiveViewState] = useState<AppView>(APP_CONFIG.ui.defaultView);
+  
+  // Set initial active file to a meaningful default
   const [activeFile, setActiveFile] = useState<FileNode | null>(() => {
     return findFileByPath(comprehensiveDemoRepo.rootFiles, 'src/pages/Dashboard.tsx') ||
            findFileByPath(comprehensiveDemoRepo.rootFiles, 'README.md') ||
@@ -326,29 +360,57 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [activeLine, setActiveLine] = useState<number | null>(null);
 
-  // Initialize RAG service with repository whenever repository changes
+  // Index repository content for semantic search whenever repo changes
   useEffect(() => {
     ragService.indexRepository(repo);
     console.log('[RAG] Indexed repository files:', ragService.getIndexStats());
   }, [repo]);
 
-  // Modals & Panels
+  // === UI Modal State ===
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isLLMSettingsModalOpen, setIsLLMSettingsModalOpen] = useState(false);
-  const [isVoiceSettingsModalOpen, setIsVoiceSettingsModalOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
-  const [rightPanelTab, setRightPanelTab] = useState<'chat' | 'debate' | 'symbols'>(APP_CONFIG.ui.rightPanelDefaultTab);
 
-  // Voice & Audio State
-  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
-    enabled: APP_CONFIG.voice.defaultEnabled,
-    rate: APP_CONFIG.voice.defaultRate,
-    pitch: APP_CONFIG.voice.defaultPitch,
-    volume: APP_CONFIG.voice.defaultVolume,
-    autoPlayResponses: false,
+  // Custom setActiveView that closes Context Panel when leaving Impact view
+  const setActiveView = (view: AppView) => {
+    setActiveViewState(view);
+    // Auto-close Context Panel when navigating away from Impact view
+    if (view !== 'impact' && isRightPanelOpen) {
+      setIsRightPanelOpen(false);
+    }
+  };
+
+  // === Voice Settings State ===
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(() => {
+    // Load from localStorage if available
+    try {
+      const stored = localStorage.getItem('repolens_voice_settings');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Failed to load voice settings:', e);
+    }
+    // Default settings
+    return {
+      enabled: APP_CONFIG.voice.defaultEnabled,
+      rate: APP_CONFIG.voice.defaultRate,
+      pitch: APP_CONFIG.voice.defaultPitch,
+      volume: APP_CONFIG.voice.defaultVolume,
+      autoPlayResponses: false,
+    };
   });
+
+  // Save voice settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('repolens_voice_settings', JSON.stringify(voiceSettings));
+    } catch (e) {
+      console.error('Failed to save voice settings:', e);
+    }
+  }, [voiceSettings]);
   const [voicePlayback, setVoicePlayback] = useState<VoicePlayback>({
     isPlaying: false,
     speakingAgentId: null,
@@ -357,7 +419,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
-  // Multi-Agent Review State (Starts as 'not_started')
+  // === Multi-Agent Review State ===
   const [reviewState, setReviewState] = useState<ReviewState>('not_started');
   const [reviewFindings, setReviewFindings] = useState<ReviewFinding[]>([]);
   const [orchestrationSummary, setOrchestrationSummary] = useState<OrchestrationSummary>({
@@ -382,17 +444,17 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isReviewRunning, setIsReviewRunning] = useState(false);
   const [reviewProgress, setReviewProgress] = useState({ label: '', percent: 0, stage: '' });
 
-  // Merge Conflict & Comparison State
+  // === Branch Comparison & Merge Conflict State ===
   const [comparisonState, setComparisonState] = useState<ComparisonState>('no_comparison');
   const [branchComparison, setBranchComparison] = useState<BranchComparison>(createEmptyBranchComparison());
   const [selectedConflict, setSelectedConflict] = useState<MergeConflictBlock | null>(null);
   const [selectedSemanticAlert, setSelectedSemanticAlert] = useState<SemanticConflictAlert | null>(null);
 
-  // Impact Analysis State
+  // === Impact Analysis State ===
   const [selectedImpactNodeId, setSelectedImpactNodeId] = useState<string | null>(null);
   const [activeChangePlan, setActiveChangePlan] = useState<FeatureChangePlan | null>(null);
 
-  // AI Chat State
+  // Helper to create personalized welcome message for chat
   const createWelcomeMessage = (targetRepo: RepositoryData): ChatMessage => {
     const uniqueLangs = Array.from(new Set(targetRepo.languages.map((l) => l.name))).join(', ');
     return {
@@ -420,13 +482,15 @@ What would you like to explore or analyze today?`,
     createWelcomeMessage(comprehensiveDemoRepo),
   ]);
 
-  // Global Keyboard Shortcuts (Cmd+K / Ctrl+K)
+  // === Keyboard Shortcuts ===
+  // Listen for Cmd+K (Mac) or Ctrl+K (Windows) to open command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       }
+      // Escape key closes all modals
       if (e.key === 'Escape') {
         setIsCommandPaletteOpen(false);
         setIsConnectModalOpen(false);
@@ -438,10 +502,12 @@ What would you like to explore or analyze today?`,
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // === File Navigation ===
+  // Navigate to specific file and optionally highlight a line
   const selectFileByPath = async (path: string, line?: number) => {
     const file = findFileByPath(repo.rootFiles, path);
     if (file) {
-      // If file content is not yet loaded from GitHub, fetch it dynamically
+      // For non-demo repos, lazy-load file content from GitHub if not cached
       if (!file.content && !repo.isDemo && repo.fullName) {
         try {
           const { fetchRawFileContent } = await import('../services/githubFetcher');
@@ -449,6 +515,7 @@ What would you like to explore or analyze today?`,
           const content = await fetchRawFileContent(repo.fullName, repo.currentBranch, file.path);
           file.content = content;
           
+          // Extract code symbols (functions, classes, etc.)
           const { extractCodeSymbols } = await import('../services/repoParser');
           file.symbols = extractCodeSymbols(file.name, content);
           console.log(`[FileLoader] Successfully loaded: ${file.path}`);
@@ -466,8 +533,12 @@ What would you like to explore or analyze today?`,
     }
   };
 
+  // === Repository Management ===
+  // Switch to a different repository (resets all state)
   const switchRepo = (newRepo: RepositoryData) => {
     setRepo(newRepo);
+    
+    // Find a good default file to open
     const firstFile = findFileByPath(newRepo.rootFiles, 'src/pages/Dashboard.tsx') ||
                      findFileByPath(newRepo.rootFiles, 'src/pages/Checkout.tsx') ||
                      findFileByPath(newRepo.rootFiles, 'README.md') ||
@@ -477,7 +548,7 @@ What would you like to explore or analyze today?`,
     setActiveView('overview');
     setIsConnectModalOpen(false);
     
-    // Reset review, debate, and comparison states for the new repository
+    // Reset all analysis states for fresh start
     setReviewState('not_started');
     setReviewFindings([]);
     setSelectedFinding(null);
@@ -488,18 +559,20 @@ What would you like to explore or analyze today?`,
     setSelectedImpactNodeId(null);
     setActiveChangePlan(null);
 
-    // Refresh chat messages with welcome for new repo
+    // Welcome user to new repository
     setChatMessages([createWelcomeMessage(newRepo)]);
   };
 
+  // Change active Git branch
   const switchBranch = (branch: string) => {
     setRepo((prev) => ({ ...prev, currentBranch: branch }));
   };
 
-  // Voice Speech Synthesis
+  // === Voice Functions ===
+  // Text-to-speech: Speak agent briefing aloud
   const speakAgentBriefing = (text: string, agentId: AgentId) => {
-    // Always speak when explicitly called (button click), regardless of global voice setting
-    // The global voice setting only applies to auto-play features
+    // Always speak when explicitly triggered (button click)
+    // Global voice setting only affects auto-play features
     
     setVoicePlayback({
       isPlaying: true,
@@ -526,12 +599,13 @@ What would you like to explore or analyze today?`,
     );
   };
 
-  // Play Multi-Agent Audio Debate
+  // Play multi-agent debate audio sequentially (one agent at a time)
   const playMultiAgentDebate = async (finding: ReviewFinding) => {
     if (!finding.debateStages?.length) return;
 
-    stopAudioPlayback();
+    stopAudioPlayback(); // Stop any current playback
 
+    // Play each debate stage in sequence with pauses between
     for (let i = 0; i < finding.debateStages.length; i++) {
       const stage = finding.debateStages[i];
       setActiveDebateStageIndex(i);
@@ -543,6 +617,7 @@ What would you like to explore or analyze today?`,
         progressPercent: Math.round(((i + 1) / finding.debateStages.length) * 100),
       });
 
+      // Wait for this stage to finish speaking
       await new Promise<void>((resolve) => {
         voiceEngine.speak(
           stage.audioSpeechText || stage.argumentText,
@@ -553,7 +628,7 @@ What would you like to explore or analyze today?`,
         );
       });
 
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 400)); // Brief pause between agents
     }
 
     setVoicePlayback({
@@ -564,6 +639,7 @@ What would you like to explore or analyze today?`,
     });
   };
 
+  // Stop any playing audio immediately
   const stopAudioPlayback = () => {
     voiceEngine.stopSpeaking();
     setVoicePlayback({
@@ -574,15 +650,15 @@ What would you like to explore or analyze today?`,
     });
   };
 
-  // Microphone Voice Input
-  const startVoiceInput = (targetAgentId?: AgentId) => {
+  // Start recording user voice input (speech-to-text)
+  const startVoiceInput = () => {
     setIsRecordingVoice(true);
     voiceEngine.startListening(
       (transcript) => {
         setIsRecordingVoice(false);
         if (transcript.trim()) {
           console.log('[Voice] Received transcript:', transcript);
-          sendChatMessage(transcript, targetAgentId);
+          sendChatMessage(transcript);
         } else {
           console.warn('[Voice] Empty transcript received');
         }
@@ -590,7 +666,7 @@ What would you like to explore or analyze today?`,
       (err) => {
         setIsRecordingVoice(false);
         console.error('[Voice] Microphone input error:', err);
-        // Show user-friendly error message
+        // Show user-friendly error with troubleshooting tips
         alert(`🎤 Voice Input Error\n\n${err}\n\nTips:\n• Make sure your browser has microphone permission\n• Check your microphone is connected and working\n• Try using Chrome, Edge, or Safari for best support`);
       },
       () => {
@@ -600,29 +676,34 @@ What would you like to explore or analyze today?`,
     );
   };
 
+  // Stop voice recording
   const stopVoiceInput = () => {
     voiceEngine.stopListening();
     setIsRecordingVoice(false);
   };
 
-  // 5-Agent Review Execution Flow
+  // === Multi-Agent Review System ===
+  // Execute 5-agent code review with progress tracking
   const runReview = async () => {
     setIsReviewRunning(true);
     setReviewState('running');
     setActiveView('review');
 
     try {
+      // Run AI analysis with progress callback
       const { findings, summary } = await llmAnalyzer.analyzeRepository(repo, (label, percent) => {
+        // Update review state based on progress
         if (percent < 30) {
-          setReviewState('running');
+          setReviewState('running');      // Initial analysis
         } else if (percent < 85) {
-          setReviewState('debating');
+          setReviewState('debating');     // Agent debate phase
         } else {
-          setReviewState('consensus');
+          setReviewState('consensus');    // Final consensus
         }
         setReviewProgress({ label, percent, stage: 'analysis' });
       });
 
+      // Update state with results
       setReviewFindings(findings);
       setOrchestrationSummary(summary);
       setSelectedFinding(findings[0] || null);
@@ -631,6 +712,7 @@ What would you like to explore or analyze today?`,
       setReviewState('completed');
       setIsReviewRunning(false);
 
+      // Auto-speak summary if enabled
       if (voiceSettings?.autoPlayResponses) {
         speakAgentBriefing(summary.orchestratorAudioSummary, AGENT_CONFIG.defaultAgentId);
       }
@@ -642,6 +724,7 @@ What would you like to explore or analyze today?`,
     }
   };
 
+  // Mark a finding as resolved (user applied the fix)
   const applyFix = (findingId: string) => {
     setReviewFindings((prev) =>
       prev.map((f) => {
@@ -653,17 +736,20 @@ What would you like to explore or analyze today?`,
     );
   };
 
+  // Mark a finding as dismissed (user chose to ignore)
   const dismissFinding = (findingId: string) => {
     setReviewFindings((prev) =>
       prev.map((f) => (f.id === findingId ? { ...f, status: 'dismissed' } : f))
     );
   };
 
-  // Branch Comparison Flow
+  // === Branch Comparison ===
+  // Compare two Git branches and detect conflicts
   const compareBranches = async (baseBranch: string, targetBranch: string) => {
     setComparisonState('comparing');
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 600)); // Simulate loading
 
+    // For demo repos, use mock comparison data
     if (repo.isDemo) {
       const { getMockBranchComparison } = await import('../data/mockBranchComparisons');
       const mockComparison = getMockBranchComparison(repo.id, baseBranch, targetBranch);
@@ -674,6 +760,7 @@ What would you like to explore or analyze today?`,
       }
     }
 
+    // For real repos, return empty comparison (GitHub API integration needed)
     setBranchComparison({
       comparisonState: 'no_conflicts',
       baseBranch,
@@ -698,6 +785,7 @@ What would you like to explore or analyze today?`,
     setComparisonState('no_conflicts');
   };
 
+  // Clear branch comparison and return to default state
   const resetComparison = () => {
     setComparisonState('no_comparison');
     setBranchComparison(createEmptyBranchComparison());
@@ -705,6 +793,7 @@ What would you like to explore or analyze today?`,
     setSelectedSemanticAlert(null);
   };
 
+  // Resolve a merge conflict with user's choice
   const resolveConflictBlock = (
     conflictId: string,
     resolution: 'ours' | 'theirs' | 'ai' | 'custom',
@@ -731,19 +820,24 @@ What would you like to explore or analyze today?`,
     }));
   };
 
+  // === Impact Analysis ===
+  // Generate AI-powered change plan from natural language prompt
   const generateChangePlanForPrompt = (prompt: string) => {
     sendChatMessage(`What is the step-by-step change plan and risk analysis for: "${prompt}"?`);
     setActiveView('copilot');
-    setIsRightPanelOpen(true);
-    setRightPanelTab('chat');
+    // Context Panel only available in Impact view
   };
 
+  // === Navigation ===
+  // Handle clickable jump actions from chat messages
   const handleJumpAction = (action: JumpAction) => {
     switch (action.type) {
       case 'code':
+        // Jump to specific file and line
         selectFileByPath(action.targetId, action.line);
         break;
       case 'finding': {
+        // Jump to review finding
         const f = reviewFindings.find((item) => item.id === action.targetId);
         if (f) {
           setSelectedFinding(f);
@@ -752,6 +846,7 @@ What would you like to explore or analyze today?`,
         break;
       }
       case 'debate': {
+        // Jump to agent debate view
         const f = reviewFindings.find((item) => item.id === action.targetId);
         if (f) {
           setActiveDebateFinding(f);
@@ -761,10 +856,12 @@ What would you like to explore or analyze today?`,
         break;
       }
       case 'impact_node':
+        // Jump to impact analysis node
         setSelectedImpactNodeId(action.targetId);
         setActiveView('impact');
         break;
       case 'merge_conflict': {
+        // Jump to specific merge conflict
         const c = branchComparison.conflicts.find((item) => item.id === action.targetId);
         if (c) {
           setSelectedConflict(c);
@@ -775,8 +872,9 @@ What would you like to explore or analyze today?`,
     }
   };
 
-  // AI Copilot Real Multi-Turn Chat (Unified ChatGPT-style Copilot)
-  const sendChatMessage = (content: string, _targetAgentId?: AgentId) => {
+  // === AI Chat System ===
+  // Send user message and get AI response with RAG context
+  const sendChatMessage = (content: string) => {
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
       sender: 'user',
@@ -987,6 +1085,8 @@ Feel free to ask for deeper file-level breakdowns, line-by-line refactoring plan
     setChatMessages([createWelcomeMessage(repo)]);
   };
 
+  // === Provider Context Value ===
+  // Bundle all state and functions to share across the app
   const contextValue: RepoStoreContextType = {
     repo,
     activeView,
@@ -1007,12 +1107,8 @@ Feel free to ask for deeper file-level breakdowns, line-by-line refactoring plan
     setIsSettingsModalOpen,
     isLLMSettingsModalOpen,
     setIsLLMSettingsModalOpen,
-    isVoiceSettingsModalOpen,
-    setIsVoiceSettingsModalOpen,
     isRightPanelOpen,
     setIsRightPanelOpen,
-    rightPanelTab,
-    setRightPanelTab,
 
     voiceSettings,
     setVoiceSettings,
@@ -1072,6 +1168,7 @@ Feel free to ask for deeper file-level breakdowns, line-by-line refactoring plan
   );
 };
 
+// Custom hook to access the global store from any component
 export const useRepoStore = () => {
   const context = useContext(RepoContext);
   if (!context) throw new Error('useRepoStore must be used within a RepoProvider');

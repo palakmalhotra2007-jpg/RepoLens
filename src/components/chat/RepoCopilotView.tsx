@@ -137,7 +137,7 @@ export const RepoCopilotView: React.FC = () => {
     voicePlayback,
     repo,
     setIsLLMSettingsModalOpen,
-    setIsVoiceSettingsModalOpen,
+    repo,
   } = useRepoStore();
 
   const [inputQuery, setInputQuery] = useState('');
@@ -247,25 +247,31 @@ export const RepoCopilotView: React.FC = () => {
   };
 
   const comprehensiveQuickPrompts = [
-    `Explain the end-to-end architecture and module boundaries of ${repo.name}`,
     'Where is the main entry point, request routing, and state lifecycle?',
     'Perform a security audit: identify vulnerabilities, auth flaws, and exposed secrets',
     'Analyze performance bottlenecks, caching efficiency, and database queries',
     'Check test coverage, edge cases, and reliability gaps across the codebase',
-    'What is the blast radius and potential breaking changes if core models are refactored?',
   ];
 
   return (
     <div className="flex-1 flex flex-col h-full bg-bg-base overflow-hidden select-none w-full">
       {/* Top Header: Unified Copilot Bar */}
-      <div className="h-12 bg-bg-surface border-b border-border-default px-6 flex items-center justify-between flex-shrink-0 w-full">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Sparkles strokeWidth={1.5} className="w-4 h-4 text-accent flex-shrink-0" />
-          <div className="min-w-0 flex items-center gap-2">
-            <span className="font-semibold text-text-primary text-xs truncate">
-              RepoLens Copilot • {repo.name}
-            </span>
-            <Badge variant="neutral">Unified AI</Badge>
+      <div className="h-14 bg-[#161b22] border-b border-[#30363d] px-6 flex items-center justify-between flex-shrink-0 w-full">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 flex-shrink-0">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white text-sm truncate">
+                RepoLens Copilot
+              </span>
+            </div>
+            <div className="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1.5">
+              <span className="text-slate-300">{repo.name}</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400">{repo.currentBranch}</span>
+            </div>
           </div>
         </div>
 
@@ -279,16 +285,7 @@ export const RepoCopilotView: React.FC = () => {
           >
             <Bot strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
             <span className="hidden sm:inline">AI Settings</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => setIsVoiceSettingsModalOpen(true)}
-            title="Voice Speech Settings"
-          >
-            <Sliders strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -488,6 +485,20 @@ export const RepoCopilotView: React.FC = () => {
             <span className="hidden sm:inline">Send</span>
           </Button>
         </form>
+        
+        {/* Voice recording hint */}
+        {isRecordingVoice && (
+          <div className="mt-2 text-center space-y-1">
+            <p className="text-xs text-rose-400 font-mono flex items-center justify-center gap-2">
+              <span className="animate-pulse">●</span>
+              Recording... Speak clearly into your microphone
+              <span className="animate-pulse">●</span>
+            </p>
+            <p className="text-[10px] text-slate-500">
+              Check browser console (F12) for detailed status
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

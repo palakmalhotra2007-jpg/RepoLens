@@ -14,7 +14,6 @@ import { GitHistoryView } from './components/git/GitHistoryView';
 import { RepoCopilotView } from './components/chat/RepoCopilotView';
 import { ConnectRepoModal } from './components/modals/ConnectRepoModal';
 import { SettingsModal } from './components/modals/SettingsModal';
-import { VoiceSettingsModal } from './components/modals/VoiceSettingsModal';
 import { LLMSettingsModal } from './components/modals/LLMSettingsModal';
 
 const WorkspaceContent: React.FC = () => {
@@ -69,7 +68,6 @@ const AppShell: React.FC = () => {
       <CommandPalette />
       <ConnectRepoModal />
       <SettingsModal />
-      <VoiceSettingsModal />
       <LLMSettingsModal isOpen={isLLMSettingsModalOpen} onClose={() => setIsLLMSettingsModalOpen(false)} />
     </div>
   );
