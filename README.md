@@ -1,5 +1,12 @@
 # 🔍 RepoLens
 
+> [!IMPORTANT]
+> **Instructions for Anuj (Backend Integration):**
+> Hi Anuj! The frontend code has been pushed to this branch. To connect your backend with this frontend:
+> 1. Make sure your backend API is running locally (e.g. on port 3000).
+> 2. Open `vite.config.ts` and set up the proxy to point to your backend URL (or configure CORS on your backend and set the `.env.local` `VITE_API_BASE_URL`).
+> 3. You may need to review the frontend API fetch calls to match your backend endpoints.
+> 4. To merge these frontend changes into your main branch, you can create a Pull Request from the `anuj` branch to your main backend branch, or manually pull this branch into yours using `git pull origin anuj`.
 **RepoLens** is an intelligent code repository analysis and visualization tool powered by AI. It provides deep insights into your codebase through advanced static analysis, multi-agent code reviews, impact analysis, and an AI-powered coding assistant.
 
 ![RepoLens](https://img.shields.io/badge/Version-1.0.0-blue)

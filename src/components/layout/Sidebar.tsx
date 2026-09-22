@@ -1,11 +1,11 @@
 import React from 'react';
 import { useRepoStore, AppView } from '../../store/useRepoStore';
+import { Badge } from '../../frontend';
 import {
   LayoutDashboard,
   ShieldAlert,
   GitMerge,
   Network,
-  Bot,
   Sparkles,
 } from 'lucide-react';
 
@@ -13,8 +13,8 @@ interface SidebarItem {
   id: AppView;
   label: string;
   icon: React.ElementType;
-  badge?: number | string;
-  badgeColor?: string;
+  badge?: string;
+  badgeVariant?: 'good' | 'warn' | 'critical' | 'accent' | 'neutral';
 }
 
 export const Sidebar: React.FC = () => {
@@ -40,43 +40,43 @@ export const Sidebar: React.FC = () => {
       label: 'Repository Intelligence',
       icon: LayoutDashboard,
       badge: `${repo.stats.filesCount} files`,
-      badgeColor: 'bg-[#21262d] text-slate-400',
+      badgeVariant: 'neutral',
     },
     {
       id: 'copilot',
       label: 'AI Copilot',
       icon: Sparkles,
       badge: 'AI',
-      badgeColor: 'bg-indigo-500/20 text-indigo-300 font-mono text-[9px]',
+      badgeVariant: 'accent',
     },
     {
       id: 'review',
       label: 'Multi-Agent Review',
       icon: ShieldAlert,
       badge: reviewState === 'completed' && openIssuesCount > 0 ? `${openIssuesCount} issues` : undefined,
-      badgeColor: criticalCount > 0 ? 'bg-rose-500/20 text-rose-400 font-bold' : 'bg-amber-500/20 text-amber-400',
+      badgeVariant: criticalCount > 0 ? 'critical' : 'warn',
     },
     {
       id: 'merge',
       label: 'Merge Intelligence',
       icon: GitMerge,
       badge: conflictsCount > 0 ? `${conflictsCount} conflicts` : undefined,
-      badgeColor: 'bg-rose-500 text-white font-bold',
+      badgeVariant: 'critical',
     },
     {
       id: 'impact',
       label: 'Impact Analysis',
       icon: Network,
       badge: '6 layers',
-      badgeColor: 'bg-[#21262d] text-cyan-300 font-mono text-[9px]',
+      badgeVariant: 'neutral',
     },
   ];
 
   return (
-    <aside className="w-56 bg-[#0d1117] border-r border-[#30363d] flex flex-col justify-between select-none flex-shrink-0 text-xs">
+    <aside className="w-56 bg-bg-base border-r border-border-default flex flex-col justify-between select-none flex-shrink-0 text-xs h-full">
       {/* Navigation Links */}
-      <div className="p-2 space-y-0.5">
-        <div className="px-2.5 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider font-mono">
+      <div className="p-2 space-y-1">
+        <div className="px-3 py-2 text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
           Navigation
         </div>
 
@@ -87,59 +87,79 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveView(item.id)}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-all group relative ${
+              className={`w-full flex items-center justify-between text-left transition-colors ${
                 isActive
-                  ? 'bg-[#21262d] text-white font-semibold border-l-2 border-indigo-500'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#161b22]'
+                  ? 'bg-bg-surface-2 border-l-2 border-accent text-text-primary pl-2.5 pr-3 py-2 rounded-r-[6px]'
+                  : 'text-text-secondary bg-transparent hover:bg-bg-surface pl-3 pr-3 py-2 rounded-[6px]'
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Icon
-                  className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                    isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'
+                  strokeWidth={1.5}
+                  className={`w-4 h-4 flex-shrink-0 ${
+                    isActive ? 'text-accent' : 'text-text-secondary'
                   }`}
                 />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate text-xs font-normal">{item.label}</span>
               </div>
 
               {item.badge && (
-                <span
-                  className={`px-1.5 py-0.2 rounded text-[10px] font-mono flex-shrink-0 ${
-                    item.badgeColor || 'bg-[#21262d] text-slate-400'
-                  }`}
-                >
+                <Badge variant={item.badgeVariant || 'neutral'} className="ml-1 text-[10px]">
                   {item.badge}
-                </span>
+                </Badge>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* 5-Agent Status Footprint */}
-      <div className="p-3 border-t border-[#30363d] bg-[#161b22]/50 m-2 rounded-lg space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <Bot className="w-3 h-3 text-indigo-400" /> 5-Agent Ensemble
+      {/* Bottom ENSEMBLE Row */}
+      <div className="border-t border-border-default pt-4 px-3 pb-3 mt-auto">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
+            Ensemble
           </span>
-          <span className={`w-1.5 h-1.5 rounded-full ${reviewState === 'completed' ? 'bg-emerald-500' : reviewState === 'running' || reviewState === 'debating' ? 'bg-amber-400 animate-ping' : 'bg-slate-500'}`} />
+          <span
+            className={`w-1.5 h-1.5 rounded-[4px] ${
+              reviewState === 'completed'
+                ? 'bg-status-good'
+                : reviewState === 'running' || reviewState === 'debating'
+                ? 'bg-status-warn'
+                : 'bg-border-strong'
+            }`}
+          />
         </div>
 
-        <div className="grid grid-cols-5 gap-1 text-center text-xs">
-          <div className="p-1 rounded bg-[#0d1117] border border-[#30363d]" title="1. Code Quality & Architecture Agent">
-            🏛️
+        <div className="grid grid-cols-5 gap-1 text-center font-mono text-[11px]">
+          <div
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            title="1. Code Quality & Architecture"
+          >
+            AQ
           </div>
-          <div className="p-1 rounded bg-[#0d1117] border border-[#30363d]" title="2. Security Guardian Agent">
-            🛡️
+          <div
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            title="2. Security Guardian"
+          >
+            SG
           </div>
-          <div className="p-1 rounded bg-[#0d1117] border border-[#30363d]" title="3. Performance & Database Agent">
-            ⚡
+          <div
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            title="3. Performance & Database"
+          >
+            PD
           </div>
-          <div className="p-1 rounded bg-[#0d1117] border border-[#30363d]" title="4. Testing & Reliability Agent">
-            🧪
+          <div
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            title="4. Testing & Reliability"
+          >
+            TR
           </div>
-          <div className="p-1 rounded bg-[#0d1117] border border-[#30363d]" title="5. Git & Merge Intelligence Agent">
-            🌿
+          <div
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            title="5. Multi-Agent Orchestrator"
+          >
+            MI
           </div>
         </div>
       </div>

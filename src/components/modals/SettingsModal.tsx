@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
+import { Button } from '../../frontend';
 import {
   X,
   Settings,
   Shield,
-  Bot,
-  Sliders,
   Check,
-  Key,
-  Database,
-  Cpu,
 } from 'lucide-react';
 
 // Settings type definition
@@ -70,17 +66,15 @@ export const SettingsModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 select-none">
+      <div className="w-full max-w-lg bg-bg-surface border border-border-default rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="p-5 border-b border-border-default flex items-center justify-between bg-bg-surface">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Settings className="w-4 h-4" />
-            </div>
+            <Settings strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
             <div>
-              <h3 className="font-bold text-sm text-white">RepoLens Configuration</h3>
-              <p className="text-[11px] text-slate-400">
+              <h3 className="font-semibold text-sm text-text-primary">RepoLens Configuration</h3>
+              <p className="text-[11px] text-text-secondary">
                 Configure 5-agent rules, semantic drift sensitivity, and model parameters.
               </p>
             </div>
@@ -88,9 +82,9 @@ export const SettingsModal: React.FC = () => {
 
           <button
             onClick={() => setIsSettingsModalOpen(false)}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-[6px] hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X strokeWidth={1.5} className="w-4 h-4" />
           </button>
         </div>
 
@@ -98,8 +92,8 @@ export const SettingsModal: React.FC = () => {
         <div className="p-6 space-y-5 text-xs">
           {/* Agent Sensitivity */}
           <div className="space-y-2">
-            <label className="font-semibold text-slate-200 flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-indigo-400" /> Review Agent Strictness
+            <label className="font-medium text-text-primary flex items-center gap-1.5">
+              <Shield strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" /> Review Agent Strictness
             </label>
             <div className="grid grid-cols-3 gap-2 font-mono">
               {(['strict', 'standard', 'relaxed'] as const).map((s) => (
@@ -119,10 +113,10 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           {/* Auto Debate Toggle */}
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+          <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-between">
             <div>
-              <div className="font-semibold text-slate-200">Inter-Agent Cross Verification</div>
-              <div className="text-[11px] text-slate-400">
+              <div className="font-medium text-text-primary">Inter-Agent Cross Verification</div>
+              <div className="text-[11px] text-text-secondary">
                 Enables agents to challenge and corroborate each other before final consensus.
               </div>
             </div>
@@ -149,27 +143,30 @@ export const SettingsModal: React.FC = () => {
               onChange={(e) => setSettings({ ...settings, semanticDriftThreshold: parseFloat(e.target.value) })}
               className="w-full accent-indigo-500 cursor-pointer"
             />
-            <span className="text-[10px] text-slate-500 font-mono">
+            <span className="text-[10px] text-text-tertiary font-mono block">
               Lower detects subtle contract divergences; higher requires near-certain runtime failure.
             </span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-end gap-2">
-          <button
+        <div className="p-4 bg-bg-surface border-t border-border-default flex items-center justify-end gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setIsSettingsModalOpen(false)}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all"
+            className="gap-1.5"
           >
-            {saved ? <Check className="w-3.5 h-3.5" /> : null}
+            {saved ? <Check strokeWidth={1.5} className="w-3.5 h-3.5 text-status-good" /> : null}
             <span>{saved ? 'Saved!' : 'Save Preferences'}</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>

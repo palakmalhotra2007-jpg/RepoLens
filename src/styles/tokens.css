@@ -1,0 +1,24 @@
+:root {
+  --bg-base: #0B0D10;
+  --bg-surface: #14171B;
+  --bg-surface-2: #1B1F24;
+  --border-default: #262B31;
+  --border-strong: #383F47;
+  --text-primary: #E8EAED;
+  --text-secondary: #9AA1AA;
+  --text-tertiary: #676E77;
+  --accent: #4FA3D9;
+  --accent-hover: #6BB4E0;
+  --status-good: #4C9A6A;
+  --status-warn: #C99A3C;
+  --status-critical: #B54A4A;
+  --mono-font: 'JetBrains Mono', monospace;
+  --ui-font: 'Inter', sans-serif;
+
+  /* Badge RGB helpers for exact opacity math */
+  --status-good-rgb: 76, 154, 106;
+  --status-warn-rgb: 201, 154, 60;
+  --status-critical-rgb: 181, 74, 74;
+  --accent-rgb: 79, 163, 217;
+  --text-secondary-rgb: 154, 161, 170;
+}
