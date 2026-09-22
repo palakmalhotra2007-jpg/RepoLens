@@ -57,7 +57,7 @@ export const ReviewPanel: React.FC = () => {
   // 1. NOT STARTED STATE
   if (reviewState === 'not_started') {
     return (
-      <div className="flex-1 overflow-y-auto p-6 text-slate-100 max-w-5xl mx-auto text-xs space-y-6 select-none">
+      <div className="flex-1 overflow-y-auto p-6 text-slate-100 w-full text-xs space-y-6 select-none">
         {/* Hero Header */}
         <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4 text-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono text-[11px]">
@@ -156,8 +156,8 @@ export const ReviewPanel: React.FC = () => {
   // 2. RUNNING / DEBATING / CONSENSUS STATE (Live Progress)
   if (reviewState === 'running' || reviewState === 'debating' || reviewState === 'consensus') {
     return (
-      <div className="flex-1 overflow-y-auto p-6 text-slate-100 max-w-4xl mx-auto text-xs space-y-6 flex flex-col justify-center items-center select-none min-h-[500px]">
-        <div className="w-full p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-5 text-center shadow-xl">
+      <div className="flex-1 overflow-y-auto p-6 text-slate-100 w-full text-xs space-y-6 flex flex-col justify-center items-center select-none min-h-[500px]">
+        <div className="w-full max-w-4xl p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-5 text-center shadow-xl">
           <div className="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500 flex items-center justify-center mx-auto text-indigo-400 animate-pulse">
             <RefreshCw className="w-6 h-6 animate-spin" />
           </div>
@@ -220,10 +220,10 @@ export const ReviewPanel: React.FC = () => {
   const primaryDebateAgent = reviewAgents.find((a) => a.id === currentDebateFinding?.primaryAgent);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-7xl mx-auto text-xs select-none">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full text-xs select-none">
       {/* Top Banner: Orchestrator Verdict & Re-run Trigger */}
       <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-1 max-w-3xl">
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5" /> 5-Agent Central Review Orchestrator
@@ -421,181 +421,264 @@ export const ReviewPanel: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: LIVE DEBATE ARENA with Skip Option */}
-      {activeTab === 'debate' && currentDebateFinding && (
+      {/* TAB 2: LIVE DEBATE ARENA */}
+      {activeTab === 'debate' && (
         <div className="space-y-5">
-          {/* Debate Header with Skip Button */}
-          <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
-                  <Users2 className="w-3.5 h-3.5" /> Live Agent Debate
-                </span>
-                <SeverityBadge severity={currentDebateFinding.severity} />
-              </div>
-              <h3 className="text-base font-bold text-white tracking-tight">{currentDebateFinding.title}</h3>
-              <div className="flex items-center gap-2 text-xs font-mono text-indigo-400">
-                <FileCode className="w-3.5 h-3.5" />
-                <button
-                  onClick={() => selectFileByPath(currentDebateFinding.file, currentDebateFinding.lineRange.start)}
-                  className="hover:underline text-indigo-300"
-                >
-                  {currentDebateFinding.file}:{currentDebateFinding.lineRange.start}-{currentDebateFinding.lineRange.end}
-                </button>
-              </div>
-            </div>
-
-            {/* Skip Debate & Audio Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('orchestration')}
-                className="px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-all font-mono"
-                title="Skip debate and go to final report"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-                <span>Skip to Report</span>
-              </button>
-
-              {voicePlayback.isPlaying ? (
-                <button
-                  onClick={stopAudioPlayback}
-                  className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
-                >
-                  <Square className="w-3.5 h-3.5 fill-current" />
-                  <span>Stop Audio</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => playMultiAgentDebate(currentDebateFinding)}
-                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>▶️ Play Debate</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Debate Stages */}
-          <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-2.5">
-            <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider flex items-center justify-between">
-              <span>5-Stage Debate Pipeline</span>
-              <span className="text-indigo-400 font-bold">Stage {activeDebateStageIndex + 1} of 5</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs font-mono">
-              {[
-                { num: 1, label: '1. Analysis', desc: 'Initial finding' },
-                { num: 2, label: '2. Challenge', desc: 'Cross-validation' },
-                { num: 3, label: '3. Debate', desc: 'Agent discussion' },
-                { num: 4, label: '4. Evidence', desc: 'Code verification' },
-                { num: 5, label: '5. Consensus', desc: 'Final ruling' },
-              ].map((step, idx) => {
-                const isCurrent = activeDebateStageIndex === idx;
-                const isCompleted = activeDebateStageIndex > idx;
-                return (
-                  <div
-                    key={step.num}
-                    onClick={() => setActiveDebateStageIndex(idx)}
-                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
-                      isCurrent
-                        ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200 font-bold ring-1 ring-indigo-500/30'
-                        : isCompleted
-                        ? 'bg-[#0d1117] border-emerald-500/40 text-emerald-300'
-                        : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-slate-300 font-bold">STAGE {step.num}</span>
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : isCurrent ? (
-                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                      ) : null}
+          {currentDebateFinding ? (
+            <>
+              {/* Finding Selector & Debate Controls Header */}
+              <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
+                        <Users2 className="w-3.5 h-3.5" /> Live Agent Debate Arena
+                      </span>
+                      <SeverityBadge severity={currentDebateFinding.severity} />
                     </div>
-                    <div className="font-semibold truncate text-[11px]">{step.label}</div>
-                    <div className="text-[10px] text-slate-500 truncate mt-0.5">{step.desc}</div>
+                    <h3 className="text-base font-bold text-white tracking-tight">{currentDebateFinding.title}</h3>
+                    <div className="flex items-center gap-2 text-xs font-mono text-indigo-400">
+                      <FileCode className="w-3.5 h-3.5" />
+                      <button
+                        onClick={() => selectFileByPath(currentDebateFinding.file, currentDebateFinding.lineRange.start)}
+                        className="hover:underline text-indigo-300"
+                      >
+                        {currentDebateFinding.file}:{currentDebateFinding.lineRange.start}-{currentDebateFinding.lineRange.end}
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Debate Arguments */}
-          <div className="space-y-3">
-            <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider">
-              Agent Arguments & Evidence ({currentDebateFinding.debateStages?.length || 0} Stages)
-            </div>
+                  {/* Audio Controls & Skip to Report */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActiveTab('orchestration')}
+                      className="px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-all font-mono"
+                      title="Skip debate and go to final report"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Skip to Report</span>
+                    </button>
 
-            {currentDebateFinding.debateStages?.map((stage, idx) => {
-              const agent = reviewAgents.find((a) => a.id === stage.agentId) || {
-                name: stage.agentName,
-                avatar: '🤖',
-                color: '#6366f1',
-                role: 'Specialized Agent',
-              };
-              const isSpeaking = voicePlayback.isPlaying && voicePlayback.speakingAgentId === stage.agentId;
+                    {voicePlayback.isPlaying ? (
+                      <button
+                        onClick={stopAudioPlayback}
+                        className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>Stop Audio</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => playMultiAgentDebate(currentDebateFinding)}
+                        className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>▶️ Play Multi-Agent Audio</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-              return (
-                <div
-                  key={idx}
-                  className={`p-4 rounded-xl border transition-all space-y-2.5 ${
-                    isSpeaking
-                      ? 'bg-indigo-950/20 border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500'
-                      : 'bg-[#161b22] border-[#30363d]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{agent.avatar}</span>
-                      <div>
-                        <div className="font-bold text-xs text-white flex items-center gap-2">
-                          <span>{stage.agentName}</span>
+                {/* Finding Switcher (if multiple findings exist) */}
+                {reviewFindings.length > 1 && (
+                  <div className="pt-3 border-t border-[#30363d] flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                    <span className="text-slate-400">Debate Topic:</span>
+                    {reviewFindings.slice(0, 5).map((finding, idx) => (
+                      <button
+                        key={finding.id}
+                        onClick={() => {
+                          setActiveDebateFinding(finding);
+                          setSelectedFinding(finding);
+                          setActiveDebateStageIndex(0);
+                        }}
+                        className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                          currentDebateFinding.id === finding.id
+                            ? 'bg-purple-600 text-white font-bold shadow-sm'
+                            : 'bg-[#0d1117] text-slate-300 hover:text-white border border-[#30363d]'
+                        }`}
+                      >
+                        <span>#{idx + 1}</span>
+                        <span className="truncate max-w-[150px]">{finding.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 5-Stage Debate Pipeline Stepper */}
+              <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-2.5">
+                <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider flex items-center justify-between">
+                  <span>5-Stage Cross-Agent Debate Protocol</span>
+                  <span className="text-indigo-400 font-bold">Stage {activeDebateStageIndex + 1} of 5</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs font-mono">
+                  {[
+                    { num: 1, label: '1. Analysis', desc: 'Primary flag' },
+                    { num: 2, label: '2. Challenge', desc: 'Peer challenge' },
+                    { num: 3, label: '3. Rebuttal', desc: 'Evidence defense' },
+                    { num: 4, label: '4. Verification', desc: 'AST & call-sites' },
+                    { num: 5, label: '5. Consensus', desc: 'Final ruling' },
+                  ].map((step, idx) => {
+                    const isCurrent = activeDebateStageIndex === idx;
+                    const isCompleted = activeDebateStageIndex > idx;
+                    return (
+                      <div
+                        key={step.num}
+                        onClick={() => setActiveDebateStageIndex(idx)}
+                        className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                          isCurrent
+                            ? 'bg-purple-600/20 border-purple-500 text-purple-200 font-bold ring-1 ring-purple-500/30'
+                            : isCompleted
+                            ? 'bg-[#0d1117] border-emerald-500/40 text-emerald-300'
+                            : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-slate-300 font-bold">STAGE {step.num}</span>
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : isCurrent ? (
+                            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                          ) : null}
+                        </div>
+                        <div className="font-semibold truncate text-[11px]">{step.label}</div>
+                        <div className="text-[10px] text-slate-500 truncate mt-0.5">{step.desc}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Inter-Agent Agreement Voting Matrix */}
+              {currentDebateFinding.agreementMatrix && currentDebateFinding.agreementMatrix.length > 0 && (
+                <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-3 font-mono">
+                  <div className="text-[11px] text-slate-200 uppercase tracking-wider flex items-center justify-between">
+                    <span>5-Agent Consensus Voting Ledger</span>
+                    <span className="text-emerald-400 text-[10px] font-bold">
+                      {currentDebateFinding.agreementMatrix.filter((v) => v.vote === 'agree').length}/5 Agents Agreed
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-[11px]">
+                    {currentDebateFinding.agreementMatrix.map((item) => (
+                      <div
+                        key={item.agentId}
+                        className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-white truncate">{item.agentName.split(' ')[0]}</span>
                           <span
-                            className={`px-2 py-0.2 rounded text-[10px] font-mono uppercase font-semibold ${
-                              stage.stance === 'flagged'
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                : stage.stance === 'disagree_challenge'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                : stage.stance === 'verified'
+                            className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-bold ${
+                              item.vote === 'agree'
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                : item.vote === 'disagree'
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
                             }`}
                           >
-                            {stage.stageTitle}
+                            {item.vote}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          {agent.role}
-                        </div>
+                        <p className="text-[10px] text-slate-400 font-sans line-clamp-2">{item.reasonSummary}</p>
                       </div>
-                    </div>
-
-                    <span className="text-[10px] font-mono text-slate-500">{stage.timestamp}</span>
+                    ))}
                   </div>
-
-                  <p className="text-xs text-slate-200 leading-relaxed pl-8">
-                    {stage.argumentText}
-                  </p>
-
-                  {stage.evidenceCode && (
-                    <div className="ml-8 p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-[11px] text-rose-300/90 overflow-x-auto">
-                      <div className="text-[10px] text-slate-500 uppercase font-sans mb-1">
-                        Evidence:
-                      </div>
-                      <code>{stage.evidenceCode}</code>
-                    </div>
-                  )}
-
-                  {isSpeaking && (
-                    <div className="ml-8 pt-1 flex items-center gap-2 text-indigo-400 text-xs font-mono animate-pulse">
-                      <Volume2 className="w-4 h-4 animate-bounce" />
-                      <span>Speaking...</span>
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
+              )}
+
+              {/* Debate Arguments & Speech Bubbles */}
+              <div className="space-y-3">
+                <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider">
+                  Live Agent Arguments & Real-Time Discourse ({currentDebateFinding.debateStages?.length || 0} Stages)
+                </div>
+
+                {currentDebateFinding.debateStages?.map((stage, idx) => {
+                  const agent = reviewAgents.find((a) => a.id === stage.agentId) || {
+                    name: stage.agentName,
+                    avatar: '🤖',
+                    color: '#6366f1',
+                    role: 'Specialized Agent',
+                  };
+                  const isSpeaking = voicePlayback.isPlaying && voicePlayback.speakingAgentId === stage.agentId;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-xl border transition-all space-y-2.5 ${
+                        isSpeaking
+                          ? 'bg-purple-950/20 border-purple-500 shadow-xl shadow-purple-500/10 ring-1 ring-purple-500'
+                          : 'bg-[#161b22] border-[#30363d]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{agent.avatar}</span>
+                          <div>
+                            <div className="font-bold text-xs text-white flex items-center gap-2">
+                              <span>{stage.agentName}</span>
+                              <span
+                                className={`px-2 py-0.2 rounded text-[10px] font-mono uppercase font-semibold ${
+                                  stage.stance === 'flagged'
+                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                    : stage.stance === 'disagree_challenge'
+                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                    : stage.stance === 'verified'
+                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                    : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                }`}
+                              >
+                                {stage.stageTitle}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              {agent.role}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] font-mono text-slate-500">{stage.timestamp}</span>
+                      </div>
+
+                      <p className="text-xs text-slate-200 leading-relaxed pl-8">
+                        {stage.argumentText}
+                      </p>
+
+                      {stage.evidenceCode && (
+                        <div className="ml-8 p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-[11px] text-rose-300/90 overflow-x-auto">
+                          <div className="text-[10px] text-slate-500 uppercase font-sans mb-1">
+                            Evidence:
+                          </div>
+                          <code>{stage.evidenceCode}</code>
+                        </div>
+                      )}
+
+                      {isSpeaking && (
+                        <div className="ml-8 pt-1 flex items-center gap-2 text-purple-400 text-xs font-mono animate-pulse">
+                          <Volume2 className="w-4 h-4 animate-bounce" />
+                          <span>Speaking argument in audio synthesis...</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="p-12 text-center bg-[#161b22] rounded-xl border border-[#30363d] text-slate-300 space-y-3">
+              <Users2 className="w-12 h-12 mx-auto text-purple-400 mb-2" />
+              <h3 className="font-bold text-white text-sm">No Active Finding in Debate Arena</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Trigger a multi-agent review to dispatch all 5 autonomous agents (Architecture, Security, Performance, Testing, Git) and view live debate rounds and voting consensus.
+              </p>
+              <button
+                onClick={runReview}
+                disabled={isReviewRunning}
+                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-semibold shadow-md transition-all inline-flex items-center gap-2"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Run 5-Agent Review & Debate</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

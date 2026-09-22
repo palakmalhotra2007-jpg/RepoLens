@@ -36,6 +36,7 @@ export class OllamaProvider implements LLMProvider {
     maxTokens?: number;
     stream?: boolean;
   }): Promise<LLMResponse> {
+    const timeoutMs = 8000;
     try {
       // First try /api/chat (native multi-turn chat endpoint)
       try {
@@ -44,6 +45,7 @@ export class OllamaProvider implements LLMProvider {
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: AbortSignal.timeout(timeoutMs),
           body: JSON.stringify({
             model: this.model,
             messages: messages.map(m => ({
@@ -53,7 +55,7 @@ export class OllamaProvider implements LLMProvider {
             stream: false,
             options: {
               temperature: options?.temperature ?? 0.7,
-              num_predict: options?.maxTokens ?? 2048,
+              num_predict: options?.maxTokens ?? 1024,
             },
           }),
         });
@@ -68,7 +70,7 @@ export class OllamaProvider implements LLMProvider {
           };
         }
       } catch (chatError) {
-        console.warn('[Ollama] /api/chat failed, attempting fallback to /api/generate:', chatError);
+        console.warn('[Ollama] /api/chat timed out or failed, trying /api/generate:', chatError);
       }
 
       // Fallback to /api/generate
@@ -79,13 +81,14 @@ export class OllamaProvider implements LLMProvider {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           model: this.model,
           prompt,
           stream: false,
           options: {
             temperature: options?.temperature ?? 0.7,
-            num_predict: options?.maxTokens ?? 2048,
+            num_predict: options?.maxTokens ?? 1024,
           },
         }),
       });

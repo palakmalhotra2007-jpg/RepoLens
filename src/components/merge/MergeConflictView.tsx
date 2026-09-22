@@ -245,7 +245,7 @@ export const MergeConflictView: React.FC = () => {
   const currentConflict = selectedConflict || branchComparison.conflicts[0];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-7xl mx-auto text-xs select-none">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full text-xs select-none">
       {/* Top Banner: Branch Comparison Info */}
       <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] shadow-xl relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

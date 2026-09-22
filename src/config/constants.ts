@@ -63,9 +63,9 @@ export const APP_CONFIG = {
   // Voice Configuration
   voice: {
     defaultEnabled: import.meta.env.VITE_VOICE_ENABLED === 'true',
-    defaultRate: parseFloat(import.meta.env.VITE_VOICE_RATE || '1.0'),
+    defaultRate: parseFloat(import.meta.env.VITE_VOICE_RATE || '0.95'), // Slightly slower for clarity
     defaultPitch: parseFloat(import.meta.env.VITE_VOICE_PITCH || '1.0'),
-    defaultVolume: parseFloat(import.meta.env.VITE_VOICE_VOLUME || '0.8'),
+    defaultVolume: parseFloat(import.meta.env.VITE_VOICE_VOLUME || '1.0'), // Full volume for clarity
   },
 
   // Security Configuration

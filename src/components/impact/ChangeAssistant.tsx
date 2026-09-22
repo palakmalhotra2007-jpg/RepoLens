@@ -41,7 +41,7 @@ export const ChangeAssistant: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-5xl mx-auto select-none">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full select-none">
       {/* Top Banner: Feature Change Assistant */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-[#0f172a] to-[#151f38] border border-slate-800 shadow-2xl relative overflow-hidden">
         <div className="space-y-2 max-w-3xl">

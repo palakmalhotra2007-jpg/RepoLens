@@ -143,6 +143,23 @@ export const VoiceSettingsModal: React.FC = () => {
               </button>
             </div>
 
+            {/* Volume Slider */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Voice Volume</span>
+                <span className="text-indigo-400">{Math.round(voiceSettings.volume * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.3"
+                max="1.0"
+                step="0.05"
+                value={voiceSettings.volume}
+                onChange={(e) => setVoiceSettings({ ...voiceSettings, volume: parseFloat(e.target.value) })}
+                className="w-full accent-indigo-500 cursor-pointer"
+              />
+            </div>
+
             {/* Pitch Slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-[11px] font-mono">
@@ -163,33 +180,42 @@ export const VoiceSettingsModal: React.FC = () => {
             {/* Rate / Speed Slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-slate-400">Speech Rate</span>
+                <span className="text-slate-400">Speech Rate (Speed)</span>
                 <span className="text-indigo-400">{voiceSettings.rate.toFixed(2)}x</span>
               </div>
               <input
                 type="range"
-                min="0.8"
-                max="1.4"
+                min="0.7"
+                max="1.3"
                 step="0.05"
                 value={voiceSettings.rate}
                 onChange={(e) => setVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
                 className="w-full accent-indigo-500 cursor-pointer"
               />
+              <p className="text-[10px] text-slate-500 italic mt-1">
+                Tip: Lower rate (0.8-0.9) improves clarity for complex content
+              </p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 bg-[#0d1117] border-t border-[#30363d] flex items-center justify-between text-xs">
-          <span className="text-[11px] text-slate-500 font-mono">
-            Provider: Web Speech Synthesis API
-          </span>
+        <div className="p-3.5 bg-[#0d1117] border-t border-[#30363d] space-y-2">
+          <div className="text-[10px] text-slate-500 font-mono space-y-1">
+            <div className="flex items-center justify-between">
+              <span>Provider: Web Speech Synthesis API</span>
+              <span className="text-indigo-400">High-Quality Voice Mode</span>
+            </div>
+            <p className="text-slate-600 italic">
+              Using browser's native speech engine with enhanced voice selection for improved clarity.
+            </p>
+          </div>
           <button
             onClick={() => {
               stopAudioPlayback();
               setIsVoiceSettingsModalOpen(false);
             }}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors font-medium"
+            className="w-full px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors font-medium text-xs"
           >
             Done
           </button>

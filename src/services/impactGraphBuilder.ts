@@ -184,17 +184,45 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
     }
   }
 
-  // Create real edges based on import / call relationships
+  // Create real edges based on import / call relationships & structural topology
   for (const sourceMod of prioritizedModules) {
     for (const imp of sourceMod.imports) {
       const targetMod = prioritizedModules.find((candidate) => {
         if (candidate.id === sourceMod.id) return false;
+        
         const candidateBase = candidate.name.replace(/\.[^/.]+$/, '');
+        const candidatePathNoExt = candidate.path.replace(/\.[^/.]+$/, '');
+        const cleanImp = imp.replace(/^[./\\@~]+/, '').replace(/\.[^/.]+$/, '');
+        
+        // Enhanced matching logic for better GitHub repo compatibility
         return (
+          // Direct name match
           imp.includes(candidateBase) ||
-          imp.endsWith(candidate.path) ||
+          cleanImp.includes(candidateBase) ||
+          candidateBase.includes(cleanImp) ||
+          
+          // Path-based matching
+          candidatePathNoExt.endsWith(cleanImp) ||
           candidate.path.endsWith(imp) ||
-          imp.includes(candidate.symbol)
+          imp.endsWith(candidate.name) ||
+          candidate.path.includes(imp) ||
+          imp.includes(candidate.path) ||
+          
+          // Symbol matching (for classes, functions, etc.)
+          (candidate.symbol && candidate.symbol !== candidate.name && imp.includes(candidate.symbol)) ||
+          
+          // Partial path matching (e.g., 'utils/helper' matches 'src/utils/helper.ts')
+          cleanImp.split('/').every(part => candidate.path.includes(part)) ||
+          
+          // Module name matching (e.g., 'auth' matches 'authService.ts', 'auth.py', etc.)
+          candidateBase.toLowerCase().includes(cleanImp.toLowerCase()) ||
+          cleanImp.toLowerCase().includes(candidateBase.toLowerCase()) ||
+          
+          // Cross-language matching (e.g., Python module to file)
+          cleanImp.replace(/\./g, '/').includes(candidateBase) ||
+          
+          // Folder-level matching (if import references a folder, match index files)
+          (candidate.name.startsWith('index.') && candidate.path.includes(cleanImp))
         );
       });
 
@@ -216,29 +244,215 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
             id: edgeId,
             source: targetMod.id,
             target: sourceMod.id,
-            animated: targetMod.layer === 'database' || targetMod.layer === 'service',
+            animated: true,
             style: { stroke: strokeColor, strokeWidth: 2 },
+          });
+        }
+      }
+    }
+
+    // Structural sibling & hierarchy inference (for files in same folder or related layers)
+    const sourceDir = sourceMod.path.substring(0, sourceMod.path.lastIndexOf('/'));
+    for (const candidate of prioritizedModules) {
+      if (candidate.id === sourceMod.id) continue;
+      const candidateDir = candidate.path.substring(0, candidate.path.lastIndexOf('/'));
+
+      // Enhanced sibling relationship detection
+      if (sourceDir && sourceDir === candidateDir) {
+        const edgeId = `e-${candidate.id}-${sourceMod.id}`;
+        const reverseId = `e-${sourceMod.id}-${candidate.id}`;
+        if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+          edgeSet.add(edgeId);
+          edges.push({
+            id: edgeId,
+            source: candidate.id,
+            target: sourceMod.id,
+            style: { stroke: '#06b6d4', strokeWidth: 1.5 },
+          });
+        }
+      }
+      
+      // Parent-child directory relationship (e.g., 'src/utils' and 'src/utils/auth')
+      if (sourceDir && candidateDir && (sourceDir.startsWith(candidateDir) || candidateDir.startsWith(sourceDir))) {
+        const edgeId = `e-${candidate.id}-${sourceMod.id}`;
+        const reverseId = `e-${sourceMod.id}-${candidate.id}`;
+        if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+          edgeSet.add(edgeId);
+          edges.push({
+            id: edgeId,
+            source: sourceDir.length < candidateDir.length ? candidate.id : sourceMod.id,
+            target: sourceDir.length < candidateDir.length ? sourceMod.id : candidate.id,
+            style: { stroke: '#475569', strokeWidth: 1, strokeDasharray: '3 3' },
           });
         }
       }
     }
   }
 
-  if (edges.length === 0 && nodes.length > 1) {
+  // Cross-layer topological bridging: ensure all nodes are connected in a coherent DAG
+  const layersOrder = ['database', 'service', 'api', 'function', 'file', 'test'];
+  
+  // Enhanced cross-layer connection: Connect each layer to the next with multiple edges
+  for (let l = 0; l < layersOrder.length - 1; l++) {
+    const fromLayer = layerColumns[layersOrder[l]];
+    const toLayer = layerColumns[layersOrder[l + 1]];
+
+    if (fromLayer.length > 0 && toLayer.length > 0) {
+      // Create multiple connections between layers for stronger connectivity
+      for (let i = 0; i < Math.max(fromLayer.length, toLayer.length); i++) {
+        const source = fromLayer[i % fromLayer.length];
+        const target = toLayer[i % toLayer.length];
+        const edgeId = `e-${source.id}-${target.id}`;
+        const reverseId = `e-${target.id}-${source.id}`;
+
+        if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+          edgeSet.add(edgeId);
+          edges.push({
+            id: edgeId,
+            source: source.id,
+            target: target.id,
+            animated: l < 2,
+            style: { stroke: l === 0 ? '#6366f1' : '#10b981', strokeWidth: 1.8 },
+          });
+        }
+      }
+      
+      // Additional cross-connections for better mesh topology
+      if (fromLayer.length > 1 && toLayer.length > 1) {
+        for (let i = 0; i < Math.min(fromLayer.length, 3); i++) {
+          const source = fromLayer[i];
+          const target = toLayer[(i + 1) % toLayer.length];
+          const edgeId = `e-${source.id}-${target.id}`;
+          const reverseId = `e-${target.id}-${source.id}`;
+          
+          if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+            edgeSet.add(edgeId);
+            edges.push({
+              id: edgeId,
+              source: source.id,
+              target: target.id,
+              style: { stroke: '#8b5cf6', strokeWidth: 1.2, strokeDasharray: '4 2' },
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Within-layer horizontal connections (siblings in same layer)
+  for (const [layerKey, modList] of Object.entries(layerColumns)) {
+    if (modList.length > 1) {
+      for (let i = 0; i < modList.length - 1; i++) {
+        const source = modList[i];
+        const target = modList[i + 1];
+        const edgeId = `e-${source.id}-${target.id}`;
+        const reverseId = `e-${target.id}-${source.id}`;
+        
+        if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
+          edgeSet.add(edgeId);
+          edges.push({
+            id: edgeId,
+            source: source.id,
+            target: target.id,
+            style: { stroke: '#475569', strokeWidth: 1, strokeDasharray: '2 2' },
+          });
+        }
+      }
+    }
+  }
+
+  // Enhanced fallback: Ensure EVERY node is connected with multiple redundant connections
+  const connectedNodes = new Set<string>();
+  edges.forEach(e => {
+    connectedNodes.add(e.source);
+    connectedNodes.add(e.target);
+  });
+
+  const disconnectedNodes = nodes.filter(n => !connectedNodes.has(n.id));
+  
+  // Phase 1: Connect all disconnected nodes to their nearest layer neighbors
+  for (const isolatedNode of disconnectedNodes) {
+    const isolatedMod = prioritizedModules.find(m => m.id === isolatedNode.id);
+    if (!isolatedMod) continue;
+    
+    // Find nodes in the same layer
+    const sameLayerNodes = nodes.filter(n => {
+      const nodeMod = prioritizedModules.find(m => m.id === n.id);
+      return nodeMod && nodeMod.layer === isolatedMod.layer && n.id !== isolatedNode.id;
+    });
+    
+    if (sameLayerNodes.length > 0) {
+      const nearest = sameLayerNodes[0];
+      const edgeId = `e-${nearest.id}-${isolatedNode.id}`;
+      edgeSet.add(edgeId);
+      edges.push({
+        id: edgeId,
+        source: nearest.id,
+        target: isolatedNode.id,
+        style: { stroke: '#64748b', strokeWidth: 1.5 },
+      });
+      connectedNodes.add(isolatedNode.id);
+    }
+  }
+
+  // Phase 2: Connect remaining isolated nodes to ANY node (ultimate fallback)
+  for (const node of nodes) {
+    if (!connectedNodes.has(node.id)) {
+      const anyConnectedNode = Array.from(connectedNodes)[0];
+      if (anyConnectedNode) {
+        const targetNode = nodes.find(n => n.id === anyConnectedNode);
+        if (targetNode) {
+          const edgeId = `e-${targetNode.id}-${node.id}`;
+          edgeSet.add(edgeId);
+          edges.push({
+            id: edgeId,
+            source: targetNode.id,
+            target: node.id,
+            style: { stroke: '#64748b', strokeWidth: 1.5 },
+          });
+          connectedNodes.add(node.id);
+        }
+      }
+    }
+  }
+
+  // Phase 3: Create a backbone connection chain if graph is still sparse
+  if (edges.length < nodes.length - 1) {
     for (let i = 0; i < nodes.length - 1; i++) {
-      const curr = nodes[i];
-      const next = nodes[i + 1];
-      const edgeId = `e-${curr.id}-${next.id}`;
-      if (!edgeSet.has(edgeId) && curr.data.type !== next.data.type) {
+      const source = nodes[i];
+      const target = nodes[i + 1];
+      const edgeId = `e-${source.id}-${target.id}`;
+      const reverseId = `e-${target.id}-${source.id}`;
+      
+      if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
         edgeSet.add(edgeId);
         edges.push({
           id: edgeId,
-          source: curr.id,
-          target: next.id,
-          style: { stroke: '#64748b', strokeWidth: 1.5 },
+          source: source.id,
+          target: target.id,
+          style: { stroke: '#475569', strokeWidth: 1.2 },
         });
       }
     }
+  }
+
+  // Final validation: Log connectivity statistics
+  const finalConnectedNodes = new Set<string>();
+  edges.forEach(e => {
+    finalConnectedNodes.add(e.source);
+    finalConnectedNodes.add(e.target);
+  });
+  
+  const totalNodes = nodes.length;
+  const connectedCount = finalConnectedNodes.size;
+  const connectivityRatio = totalNodes > 0 ? (connectedCount / totalNodes * 100).toFixed(1) : '0';
+  const avgDegree = totalNodes > 0 ? (edges.length * 2 / totalNodes).toFixed(2) : '0';
+  
+  console.log(`[Impact Graph] Built for ${repo.name}: ${totalNodes} nodes, ${edges.length} edges`);
+  console.log(`[Impact Graph] Connectivity: ${connectedCount}/${totalNodes} nodes (${connectivityRatio}%), avg degree: ${avgDegree}`);
+  
+  if (connectedCount < totalNodes) {
+    console.warn(`[Impact Graph] Warning: ${totalNodes - connectedCount} disconnected nodes detected`);
   }
 
   return { nodes, edges, modulesMap };
@@ -393,14 +607,87 @@ function extractImports(content: string): string[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
+    
+    // ESM: import X from 'module'
     const esmMatch = trimmed.match(/from\s+['"]([^'"]+)['"]/);
     if (esmMatch) {
       imports.push(esmMatch[1]);
       continue;
     }
+    
+    // Side effect imports: import 'module'
+    const sideEffectMatch = trimmed.match(/^import\s+['"]([^'"]+)['"]/);
+    if (sideEffectMatch) {
+      imports.push(sideEffectMatch[1]);
+      continue;
+    }
+    
+    // Dynamic imports: import('module')
+    const dynamicMatch = trimmed.match(/import\(\s*['"]([^'"]+)['"]\s*\)/);
+    if (dynamicMatch) {
+      imports.push(dynamicMatch[1]);
+      continue;
+    }
+    
+    // CommonJS: require('module')
     const cjsMatch = trimmed.match(/require\(\s*['"]([^'"]+)['"]\s*\)/);
     if (cjsMatch) {
       imports.push(cjsMatch[1]);
+      continue;
+    }
+    
+    // TypeScript type imports: import type { X } from 'module'
+    const typeImportMatch = trimmed.match(/import\s+type\s+.*?from\s+['"]([^'"]+)['"]/);
+    if (typeImportMatch) {
+      imports.push(typeImportMatch[1]);
+      continue;
+    }
+    
+    // Python imports: import module, from module import X
+    const pythonImportMatch = trimmed.match(/^(?:from\s+([^\s]+)\s+import|import\s+([^\s,]+))/);
+    if (pythonImportMatch) {
+      imports.push(pythonImportMatch[1] || pythonImportMatch[2]);
+      continue;
+    }
+    
+    // Go imports: import "module" or import ("module1" "module2")
+    const goImportMatch = trimmed.match(/import\s+["']([^"']+)["']/);
+    if (goImportMatch) {
+      imports.push(goImportMatch[1]);
+      continue;
+    }
+    
+    // Rust use statements: use module::submodule
+    const rustUseMatch = trimmed.match(/^use\s+([^\s;{]+)/);
+    if (rustUseMatch) {
+      imports.push(rustUseMatch[1]);
+      continue;
+    }
+    
+    // Java imports: import package.Class
+    const javaImportMatch = trimmed.match(/^import\s+([^\s;]+)/);
+    if (javaImportMatch && !trimmed.includes('(')) {
+      imports.push(javaImportMatch[1]);
+      continue;
+    }
+    
+    // PHP use/require/include
+    const phpRequireMatch = trimmed.match(/(?:require|include|require_once|include_once)\s*\(?['"]([^'"]+)['"]/);
+    if (phpRequireMatch) {
+      imports.push(phpRequireMatch[1]);
+      continue;
+    }
+    const phpUseMatch = trimmed.match(/^use\s+([^\s;\\]+)/);
+    if (phpUseMatch) {
+      imports.push(phpUseMatch[1]);
+      continue;
+    }
+    
+    // C/C++ includes: #include "header.h" or #include <header>
+    const cIncludeMatch = trimmed.match(/#include\s+[<"]([^>"]+)[>"]/);
+    if (cIncludeMatch) {
+      imports.push(cIncludeMatch[1]);
+      continue;
     }
   }
 

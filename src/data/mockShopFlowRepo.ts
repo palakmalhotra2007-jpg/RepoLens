@@ -1506,8 +1506,13 @@ export const mockShopFlowRepository: RepositoryData = {
   fullName: 'acme-corp/shopflow-core',
   description: 'Enterprise React & Node.js headless e-commerce repository with PostgreSQL, Stripe Elements, and Redis cache.',
   defaultBranch: 'main',
-  currentBranch: 'feat/stripe-elements-v3',
-  branches: ['main', 'feat/stripe-elements-v3', 'fix/checkout-idempotency', 'chore/prisma-pg16-upgrade'],
+  currentBranch: 'main',
+  branches: [
+    'main', 
+    'feature/stripe-elements-v3-upgrade', 
+    'bugfix/checkout-idempotency', 
+    'feature/prisma-inventory-reservation'
+  ],
   isDemo: true,
   stats: {
     filesCount: 26,

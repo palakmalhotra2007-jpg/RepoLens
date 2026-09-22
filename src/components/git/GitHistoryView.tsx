@@ -102,7 +102,7 @@ export const GitHistoryView: React.FC = () => {
   const currentCommit = commits.find((c) => c.shortHash === selectedCommitHash) || commits[0];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-7xl mx-auto">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full">
       {/* Top Banner */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-[#0f172a] to-[#151f38] border border-slate-800 shadow-2xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

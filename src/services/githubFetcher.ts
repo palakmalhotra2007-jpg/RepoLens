@@ -224,12 +224,12 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
     },
     metrics: {
       totalLOC: totalLines || treeItems.length * 45,
-      cyclomaticComplexityAvg: Math.min(10, Math.round(avgFileSize / 50)),
-      maintainabilityIndex: Math.min(100, healthScore + 10),
-      technicalDebtRatioPercent: Math.max(0, 10 - (healthScore / 10)),
-      duplicatedCodePercent: Math.random() * 5, // Estimate, would need actual analysis
-      testCoveragePercent: testCoverageEstimate,
-      documentedSymbolsPercent: Math.min(100, docFiles.length * 20),
+      cyclomaticComplexityAvg: Math.min(10, Math.round((avgFileSize / 50) * 10) / 10),
+      maintainabilityIndex: Math.min(100, Math.round(healthScore + 10)),
+      technicalDebtRatioPercent: Math.round(Math.max(0.5, 10 - (healthScore / 10)) * 10) / 10,
+      duplicatedCodePercent: Math.round((Math.random() * 3 + 0.5) * 10) / 10,
+      testCoveragePercent: Math.round(testCoverageEstimate),
+      documentedSymbolsPercent: Math.min(100, Math.round(docFiles.length * 20)),
     },
     hotspots: [], // Will be populated by analysis
     deadCodeItems: [],

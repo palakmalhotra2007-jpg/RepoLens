@@ -112,35 +112,62 @@ export function extractCodeSymbols(filename: string, content: string): CodeSymbo
 
 export function detectTechStack(files: FileNode[]) {
   const allFiles = flattenFileTree(files);
-  const extensions: Record<string, number> = {};
+  const langTotals: Record<string, { count: number; color: string; files: number }> = {};
   let totalLines = 0;
 
+  // Ignore non-code assets and config clutter
+  const ignoredExts = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'webp', 'bmp',
+    'woff', 'woff2', 'ttf', 'eot', 'otf',
+    'lock', 'gitignore', 'npmrc', 'prettierrc', 'eslintcache', 'ds_store',
+    'map', 'mp3', 'mp4', 'pdf', 'zip', 'tar', 'gz'
+  ]);
+
   allFiles.forEach(f => {
-    const ext = f.name.includes('.') ? f.name.split('.').pop()?.toLowerCase() || '' : 'other';
-    const lines = (f.content?.split('\n').length) || 20;
+    if (f.type !== 'file') return;
+    const ext = f.name.includes('.') ? f.name.split('.').pop()?.toLowerCase() || '' : '';
+    if (!ext || ignoredExts.has(ext)) return;
+
+    let langName = ext.toUpperCase();
+    let color = '#6366f1';
+
+    if (ext === 'ts' || ext === 'tsx') { langName = 'TypeScript'; color = '#3178c6'; }
+    else if (ext === 'js' || ext === 'jsx' || ext === 'mjs' || ext === 'cjs') { langName = 'JavaScript'; color = '#f7df1e'; }
+    else if (ext === 'css' || ext === 'scss' || ext === 'sass' || ext === 'less') { langName = 'CSS'; color = '#563d7c'; }
+    else if (ext === 'html') { langName = 'HTML'; color = '#e34c26'; }
+    else if (ext === 'json') { langName = 'JSON'; color = '#cb171e'; }
+    else if (ext === 'prisma') { langName = 'Prisma'; color = '#0c344b'; }
+    else if (ext === 'py') { langName = 'Python'; color = '#3572A5'; }
+    else if (ext === 'go') { langName = 'Go'; color = '#00ADD8'; }
+    else if (ext === 'rs') { langName = 'Rust'; color = '#dea584'; }
+    else if (ext === 'java') { langName = 'Java'; color = '#b07219'; }
+    else if (ext === 'cpp' || ext === 'cc' || ext === 'cxx') { langName = 'C++'; color = '#f34b7d'; }
+    else if (ext === 'c' || ext === 'h') { langName = 'C'; color = '#555555'; }
+    else if (ext === 'sql') { langName = 'SQL'; color = '#e38c00'; }
+    else if (ext === 'sh' || ext === 'bash') { langName = 'Shell'; color = '#89e051'; }
+    else if (ext === 'md' || ext === 'mdx') { langName = 'Markdown'; color = '#083fa1'; }
+    else if (ext === 'vue') { langName = 'Vue'; color = '#41b883'; }
+    else if (ext === 'svelte') { langName = 'Svelte'; color = '#ff3e00'; }
+
+    const lines = f.content?.split('\n').length || 25;
     totalLines += lines;
-    extensions[ext] = (extensions[ext] || 0) + lines;
+
+    if (!langTotals[langName]) {
+      langTotals[langName] = { count: 0, color, files: 0 };
+    }
+    langTotals[langName].count += lines;
+    langTotals[langName].files += 1;
   });
 
-  const languages = Object.entries(extensions).map(([ext, count]) => {
-    let name = ext.toUpperCase();
-    let color = '#6366f1';
-    if (ext === 'ts' || ext === 'tsx') { name = 'TypeScript'; color = '#3178c6'; }
-    else if (ext === 'js' || ext === 'jsx') { name = 'JavaScript'; color = '#f7df1e'; }
-    else if (ext === 'prisma') { name = 'Prisma'; color = '#0c344b'; }
-    else if (ext === 'json') { name = 'JSON'; color = '#cb171e'; }
-    else if (ext === 'md') { name = 'Markdown'; color = '#083fa1'; }
-    else if (ext === 'py') { name = 'Python'; color = '#3572A5'; }
-    else if (ext === 'go') { name = 'Go'; color = '#00ADD8'; }
-    else if (ext === 'rs') { name = 'Rust'; color = '#dea584'; }
-
-    return {
+  const languages = Object.entries(langTotals)
+    .map(([name, data]) => ({
       name,
-      percentage: totalLines ? Math.round((count / totalLines) * 1000) / 10 : 0,
-      color,
-      files: allFiles.filter(f => f.name.endsWith('.' + ext)).length,
-    };
-  }).filter(l => l.percentage > 0).sort((a, b) => b.percentage - a.percentage);
+      percentage: totalLines ? Math.round((data.count / totalLines) * 1000) / 10 : 0,
+      color: data.color,
+      files: data.files,
+    }))
+    .filter(l => l.percentage > 0)
+    .sort((a, b) => b.percentage - a.percentage);
 
   return { languages, totalLines, totalFiles: allFiles.length };
 }

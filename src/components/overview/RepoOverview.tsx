@@ -60,10 +60,10 @@ export const RepoOverview: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-7xl mx-auto text-xs select-none">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full text-xs select-none">
       {/* Top Banner: Repo Intelligence Header */}
       <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-1.5 max-w-3xl">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
               Repository Intelligence Active
@@ -177,15 +177,15 @@ export const RepoOverview: React.FC = () => {
               </div>
               <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d]">
                 <span className="text-[10px] text-slate-500 block uppercase">Test Coverage</span>
-                <span className="text-base font-bold text-emerald-400">{repo.metrics.testCoveragePercent}%</span>
+                <span className="text-base font-bold text-emerald-400">{Number(repo.metrics.testCoveragePercent || 0).toFixed(1)}%</span>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d]">
                 <span className="text-[10px] text-slate-500 block uppercase">Tech Debt Ratio</span>
-                <span className="text-base font-bold text-slate-200">{repo.metrics.technicalDebtRatioPercent}%</span>
+                <span className="text-base font-bold text-slate-200">{Number(repo.metrics.technicalDebtRatioPercent || 0).toFixed(1)}%</span>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d]">
                 <span className="text-[10px] text-slate-500 block uppercase">Duplication</span>
-                <span className="text-base font-bold text-slate-200">{repo.metrics.duplicatedCodePercent}%</span>
+                <span className="text-base font-bold text-slate-200">{Number(repo.metrics.duplicatedCodePercent || 0).toFixed(1)}%</span>
               </div>
             </div>
           </div>

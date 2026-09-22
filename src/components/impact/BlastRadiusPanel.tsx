@@ -25,7 +25,13 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
   nodes = [],
   edges = [],
 }) => {
-  const { selectFileByPath, sendChatMessage, repo } = useRepoStore();
+  const { 
+    selectFileByPath, 
+    sendChatMessage, 
+    repo,
+    setIsRightPanelOpen,
+    setRightPanelTab,
+  } = useRepoStore();
 
   // Compute real dynamic blast radius from graph topology
   const activeRadius: BlastRadiusResult = selectedNodeId
@@ -157,7 +163,12 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
       {/* Ask AI to generate Change Plan */}
       {selectedNodeId && (
         <button
-          onClick={() => sendChatMessage(`What are the step-by-step changes and risks if I modify ${activeRadius.targetLabel}?`)}
+          onClick={() => {
+            sendChatMessage(`What are the step-by-step changes and risks if I modify ${activeRadius.targetLabel}?`);
+            // Auto-open chat panel when asking AI
+            setIsRightPanelOpen(true);
+            setRightPanelTab('chat');
+          }}
           className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all font-mono"
         >
           <Sparkles className="w-3.5 h-3.5" />

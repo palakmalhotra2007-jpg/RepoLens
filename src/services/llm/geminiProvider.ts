@@ -69,6 +69,7 @@ export class GeminiProvider implements LLMProvider {
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: AbortSignal.timeout(10000),
           body: JSON.stringify(payload),
         }
       );
