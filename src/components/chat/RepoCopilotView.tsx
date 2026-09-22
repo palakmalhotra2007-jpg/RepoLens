@@ -137,7 +137,6 @@ export const RepoCopilotView: React.FC = () => {
     voicePlayback,
     repo,
     setIsLLMSettingsModalOpen,
-    repo,
   } = useRepoStore();
 
   const [inputQuery, setInputQuery] = useState('');
@@ -278,7 +277,7 @@ export const RepoCopilotView: React.FC = () => {
           >
             <Bot strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
             <span className="hidden sm:inline">AI Settings</span>
-          </button>
+          </Button>
         </div>
       </div>
 
