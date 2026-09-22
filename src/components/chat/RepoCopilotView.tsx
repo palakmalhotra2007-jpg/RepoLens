@@ -220,13 +220,6 @@ export const RepoCopilotView: React.FC = () => {
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
-  const comprehensiveQuickPrompts = [
-    'Where is the main entry point, request routing, and state lifecycle?',
-    'Perform a security audit: identify vulnerabilities, auth flaws, and exposed secrets',
-    'Analyze performance bottlenecks, caching efficiency, and database queries',
-    'Check test coverage, edge cases, and reliability gaps across the codebase',
-  ];
-
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d1117] overflow-hidden select-none w-full">
       {/* Top Header: Unified Copilot Bar */}
@@ -290,55 +283,6 @@ export const RepoCopilotView: React.FC = () => {
                         <Sparkles className="w-3 h-3" />
                       </div>
                       <span className="font-semibold text-slate-100 text-xs">RepoLens Copilot</span>
-                      <span className="px-1.5 py-0.5 rounded bg-[#0d1117] text-[10px] font-mono text-indigo-300 border border-[#30363d]">
-                        Architect AI
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {/* Copy message button */}
-                      <button
-                        onClick={() => handleCopyMessage(msg.id, msg.content)}
-                        className="px-2 py-1 rounded hover:bg-[#21262d] text-slate-400 hover:text-slate-200 flex items-center gap-1 text-[10px] font-mono transition-colors"
-                        title="Copy message"
-                      >
-                        {copiedMsgId === msg.id ? (
-                          <>
-                            <Check className="w-3 h-3 text-green-400" />
-                            <span className="text-green-400">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-
-                      {/* Speak Button */}
-                      <button
-                        onClick={() => {
-                          if (isSpeaking) {
-                            stopAudioPlayback();
-                          } else {
-                            speakAgentBriefing(msg.content, 'orchestrator');
-                          }
-                        }}
-                        className="px-2 py-1 rounded hover:bg-[#21262d] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-mono text-[10px] border border-[#30363d] transition-all"
-                        title="Speak response aloud"
-                      >
-                        {isSpeaking ? (
-                          <>
-                            <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                            <span className="text-rose-400">Stop</span>
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 className="w-3.5 h-3.5" />
-                            <span>Voice</span>
-                          </>
-                        )}
-                      </button>
                     </div>
                   </div>
                 )}
@@ -393,20 +337,6 @@ export const RepoCopilotView: React.FC = () => {
           );
         })}
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick Prompts Bar */}
-      <div className="px-6 py-2.5 border-t border-[#30363d] bg-[#161b22]/70 flex gap-2 overflow-x-auto no-scrollbar w-full flex-shrink-0">
-        {comprehensiveQuickPrompts.map((promptText, idx) => (
-          <button
-            key={idx}
-            onClick={() => sendChatMessage(promptText)}
-            className="whitespace-nowrap px-3 py-1.5 rounded-full bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 text-[11px] transition-all flex items-center gap-1.5"
-          >
-            <Zap className="w-3 h-3 text-indigo-400 flex-shrink-0" />
-            <span>{promptText}</span>
-          </button>
-        ))}
       </div>
 
       {/* Chat Input Bar */}
