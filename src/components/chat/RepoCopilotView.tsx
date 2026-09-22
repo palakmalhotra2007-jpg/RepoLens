@@ -246,13 +246,6 @@ export const RepoCopilotView: React.FC = () => {
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
-  const comprehensiveQuickPrompts = [
-    'Where is the main entry point, request routing, and state lifecycle?',
-    'Perform a security audit: identify vulnerabilities, auth flaws, and exposed secrets',
-    'Analyze performance bottlenecks, caching efficiency, and database queries',
-    'Check test coverage, edge cases, and reliability gaps across the codebase',
-  ];
-
   return (
     <div className="flex-1 flex flex-col h-full bg-bg-base overflow-hidden select-none w-full">
       {/* Top Header: Unified Copilot Bar */}
@@ -313,57 +306,10 @@ export const RepoCopilotView: React.FC = () => {
                 {isAssistant && (
                   <div className="flex items-center justify-between pb-2 mb-3 border-b border-border-default">
                     <div className="flex items-center gap-2">
-                      <Sparkles strokeWidth={1.5} className="w-3.5 h-3.5 text-accent" />
-                      <span className="font-semibold text-text-primary text-xs">RepoLens Copilot</span>
-                      <span className="px-1.5 py-0.2 rounded-[4px] bg-bg-surface-2 text-[10px] font-mono text-text-tertiary border border-border-default">
-                        Architect AI
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {/* Copy message button */}
-                      <button
-                        onClick={() => handleCopyMessage(msg.id, msg.content)}
-                        className="px-2 py-0.5 rounded-[4px] hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary flex items-center gap-1 text-[10px] font-mono transition-colors"
-                        title="Copy message"
-                      >
-                        {copiedMsgId === msg.id ? (
-                          <>
-                            <Check strokeWidth={1.5} className="w-3 h-3 text-status-good" />
-                            <span className="text-status-good">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy strokeWidth={1.5} className="w-3 h-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-
-                      {/* Speak Button */}
-                      <button
-                        onClick={() => {
-                          if (isSpeaking) {
-                            stopAudioPlayback();
-                          } else {
-                            speakAgentBriefing(msg.content, 'orchestrator');
-                          }
-                        }}
-                        className="px-2 py-0.5 rounded-[4px] hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary flex items-center gap-1 font-mono text-[10px] border border-border-default transition-colors"
-                        title="Speak response aloud"
-                      >
-                        {isSpeaking ? (
-                          <>
-                            <VolumeX strokeWidth={1.5} className="w-3.5 h-3.5 text-status-critical" />
-                            <span className="text-status-critical">Stop</span>
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 strokeWidth={1.5} className="w-3.5 h-3.5" />
-                            <span>Voice</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="w-5 h-5 rounded-md bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                        <Sparkles className="w-3 h-3" />
+                      </div>
+                      <span className="font-semibold text-slate-100 text-xs">RepoLens Copilot</span>
                     </div>
                   </div>
                 )}
@@ -418,20 +364,6 @@ export const RepoCopilotView: React.FC = () => {
           );
         })}
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick Prompts Bar */}
-      <div className="px-6 py-2 border-t border-border-default bg-bg-surface flex gap-2 overflow-x-auto w-full flex-shrink-0">
-        {comprehensiveQuickPrompts.map((promptText, idx) => (
-          <button
-            key={idx}
-            onClick={() => sendChatMessage(promptText)}
-            className="whitespace-nowrap px-3 py-1 rounded-[4px] bg-bg-surface-2 hover:bg-[#262B31] border border-border-default text-text-secondary hover:text-text-primary text-[11px] transition-colors flex items-center gap-1.5"
-          >
-            <Zap strokeWidth={1.5} className="w-3 h-3 text-text-secondary flex-shrink-0" />
-            <span>{promptText}</span>
-          </button>
-        ))}
       </div>
 
       {/* Chat Input Bar */}
