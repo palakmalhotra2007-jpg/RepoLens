@@ -23,8 +23,8 @@ export class OllamaProvider implements LLMProvider {
       const data = await response.json();
       const models = data.models || [];
       
-      // Check if our model is available
-      return models.some((m: any) => m.name === this.model || m.name.startsWith(this.model.split(':')[0]));
+      // Check if any model or our target model is available
+      return models.some((m: any) => m.name === this.model || m.name.startsWith(this.model.split(':')[0])) || models.length > 0;
     } catch (error) {
       console.warn('[Ollama] Not available:', error);
       return false;
@@ -37,7 +37,41 @@ export class OllamaProvider implements LLMProvider {
     stream?: boolean;
   }): Promise<LLMResponse> {
     try {
-      // Convert messages to Ollama format
+      // First try /api/chat (native multi-turn chat endpoint)
+      try {
+        const chatResponse = await fetch(`${this.baseUrl}/api/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: this.model,
+            messages: messages.map(m => ({
+              role: m.role,
+              content: m.content,
+            })),
+            stream: false,
+            options: {
+              temperature: options?.temperature ?? 0.7,
+              num_predict: options?.maxTokens ?? 2048,
+            },
+          }),
+        });
+
+        if (chatResponse.ok) {
+          const data = await chatResponse.json();
+          return {
+            content: data.message?.content || '',
+            model: this.model,
+            provider: 'ollama',
+            tokensUsed: data.eval_count || 0,
+          };
+        }
+      } catch (chatError) {
+        console.warn('[Ollama] /api/chat failed, attempting fallback to /api/generate:', chatError);
+      }
+
+      // Fallback to /api/generate
       const prompt = this.formatMessages(messages);
       
       const response = await fetch(`${this.baseUrl}/api/generate`, {
@@ -50,14 +84,14 @@ export class OllamaProvider implements LLMProvider {
           prompt,
           stream: false,
           options: {
-            temperature: options?.temperature || 0.7,
-            num_predict: options?.maxTokens || 2048,
+            temperature: options?.temperature ?? 0.7,
+            num_predict: options?.maxTokens ?? 2048,
           },
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Ollama API error (${response.status}): ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -75,7 +109,6 @@ export class OllamaProvider implements LLMProvider {
   }
 
   private formatMessages(messages: LLMMessage[]): string {
-    // Combine system and user messages into a single prompt
     let prompt = '';
     
     for (const msg of messages) {
@@ -89,7 +122,6 @@ export class OllamaProvider implements LLMProvider {
     }
     
     prompt += 'Assistant: ';
-    
     return prompt;
   }
 

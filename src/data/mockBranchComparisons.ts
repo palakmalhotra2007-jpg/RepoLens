@@ -1,8 +1,7 @@
 import { BranchComparison } from '../types/merge';
 
 /**
- * Mock branch comparisons for demo repositories
- * Simulates realistic branch differences for testing
+ * Branch comparisons for the TaskFlow demo repository
  */
 
 // TaskFlow: main vs feature/dark-mode
@@ -30,15 +29,13 @@ export const taskflowDarkModeComparison: BranchComparison = {
   changedFunctions: [
     {
       file: 'src/App.tsx',
-      functionName: 'App',
-      changeType: 'modified',
-      description: 'Added theme context provider',
+      name: 'App',
+      impact: 'Added theme context provider wrapping component tree',
     },
     {
       file: 'src/components/TaskCard.tsx',
-      functionName: 'TaskCard',
-      changeType: 'modified',
-      description: 'Updated styling to use theme variables',
+      name: 'TaskCard',
+      impact: 'Updated styling classes to support dark mode tokens',
     },
   ],
   changedApis: [],
@@ -50,7 +47,7 @@ export const taskflowDarkModeComparison: BranchComparison = {
 
 // TaskFlow: main vs feature/notifications
 export const taskflowNotificationsComparison: BranchComparison = {
-  comparisonState: 'has_conflicts',
+  comparisonState: 'conflicts_found',
   baseBranch: 'main',
   currentBranch: 'main',
   targetBranch: 'feature/notifications',
@@ -73,29 +70,25 @@ export const taskflowNotificationsComparison: BranchComparison = {
   changedFunctions: [
     {
       file: 'src/App.tsx',
-      functionName: 'App',
-      changeType: 'modified',
-      description: 'Added notification system initialization',
+      name: 'App',
+      impact: 'Mounted NotificationProvider in root App component',
     },
     {
       file: 'src/pages/Dashboard.tsx',
-      functionName: 'Dashboard',
-      changeType: 'modified',
-      description: 'Integrated notification display',
+      name: 'Dashboard',
+      impact: 'Added real-time notification bell component',
     },
   ],
   changedApis: [
     {
       method: 'GET',
-      path: '/api/notifications',
-      changeType: 'added',
-      description: 'Fetch user notifications',
+      route: '/api/notifications',
+      impact: 'Fetch authenticated user notification queue',
     },
     {
       method: 'PATCH',
-      path: '/api/notifications/:id/read',
-      changeType: 'added',
-      description: 'Mark notification as read',
+      route: '/api/notifications/:id/read',
+      impact: 'Mark notification item as read',
     },
   ],
   changedDatabaseStructures: [],
@@ -106,8 +99,26 @@ export const taskflowNotificationsComparison: BranchComparison = {
       file: 'src/App.tsx',
       lineStart: 15,
       lineEnd: 25,
-      type: 'textual',
-      resolutionStatus: 'pending',
+      conflictType: 'textual',
+      title: 'Provider hierarchy collision in App.tsx',
+      reason: 'Both branches modified the root component context provider tree.',
+      whatConflicted: 'App component JSX wrapping order',
+      whyItConflicted: 'Feature branch wrapped NotificationProvider while main updated TaskProvider.',
+      whatEachBranchChanged: {
+        base: 'Standard AuthProvider and TaskProvider',
+        ours: 'Updated TaskProvider configurations',
+        theirs: 'Inserted NotificationProvider in middle of context tree',
+      },
+      whyItHappened: {
+        baseContext: 'Root application context wrappers',
+        oursIntent: 'Enhance task state management',
+        theirsIntent: 'Inject notification subscriptions globally',
+      },
+      resolutionStatus: 'unresolved',
+      affectedComponents: ['App', 'AuthProvider', 'NotificationProvider', 'TaskProvider'],
+      semanticRiskSeverity: 'medium',
+      semanticImpact: 'Context nesting order may impact downstream consumer hook initialization.',
+      resolutionSuggestion: 'Nest NotificationProvider inside AuthProvider and around TaskProvider.',
       oursCode: `import { AuthProvider } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
 
@@ -153,16 +164,40 @@ function App() {
     </AuthProvider>
   );
 }`,
+      aiSuggestedCode: `import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { TaskProvider } from './context/TaskContext';
+
+function App() {
+  return (
+    <AuthProvider>
+      <NotificationProvider>
+        <TaskProvider>
+          <Router>
+            <Routes />
+          </Router>
+        </TaskProvider>
+      </NotificationProvider>
+    </AuthProvider>
+  );
+}`,
     },
   ],
   semanticAlerts: [
     {
       id: 'semantic_1',
       severity: 'medium',
-      title: 'Provider nesting order changed',
-      description: 'NotificationProvider added between AuthProvider and TaskProvider. This changes the context hierarchy and may affect component behavior.',
-      affectedFiles: ['src/App.tsx'],
-      recommendation: 'Verify that all components can access both Auth and Notification contexts correctly.',
+      title: 'Context Provider hierarchy altered',
+      category: 'environment_flag',
+      fileA: 'src/App.tsx',
+      fileB: 'src/context/NotificationContext.tsx',
+      description: 'NotificationProvider introduced between AuthProvider and TaskProvider.',
+      gitMergeStatus: 'git_clean_merge_with_hidden_runtime_break',
+      rootCause: 'Concurrent branch modification of component tree',
+      runtimeBreakRisk: 'Components calling useNotification must be descendants of NotificationProvider.',
+      recommendedResolution: 'Verify all downstream routes have access to Auth and Notification contexts.',
+      diffA: '+ <NotificationProvider>',
+      diffB: '- <TaskProvider without NotificationContext>',
     },
   ],
 };
@@ -187,15 +222,13 @@ export const taskflowAuthBugfixComparison: BranchComparison = {
   changedFunctions: [
     {
       file: 'server/middleware/auth.ts',
-      functionName: 'authMiddleware',
-      changeType: 'modified',
-      description: 'Added token expiration validation',
+      name: 'authMiddleware',
+      impact: 'Added token expiration validation with 401 response',
     },
     {
       file: 'src/services/api.ts',
-      functionName: 'request',
-      changeType: 'modified',
-      description: 'Added automatic token refresh on 401',
+      name: 'request',
+      impact: 'Added automatic token refresh handler on 401 response',
     },
   ],
   changedApis: [],
@@ -225,22 +258,15 @@ export const taskflowDbOptimizationComparison: BranchComparison = {
   changedFunctions: [
     {
       file: 'server/routes/tasks.ts',
-      functionName: 'GET /',
-      changeType: 'modified',
-      description: 'Optimized query with selective field loading',
+      name: 'GET /api/tasks',
+      impact: 'Optimized Prisma query with select projections',
     },
   ],
   changedApis: [],
   changedDatabaseStructures: [
     {
-      model: 'Task',
-      changeType: 'index_added',
-      description: 'Added composite index on (userId, status)',
-    },
-    {
-      model: 'Task',
-      changeType: 'index_added',
-      description: 'Added index on dueDate for sorting',
+      table: 'Task',
+      change: 'Added composite index on (userId, status)',
     },
   ],
   changedDependencies: [],
@@ -248,11 +274,18 @@ export const taskflowDbOptimizationComparison: BranchComparison = {
   semanticAlerts: [
     {
       id: 'semantic_db_1',
-      severity: 'low',
-      title: 'Database schema migration required',
-      description: 'New indexes added to Task model. Requires database migration before deployment.',
-      affectedFiles: ['prisma/schema.prisma'],
-      recommendation: 'Run `npx prisma migrate dev` to apply schema changes.',
+      severity: 'medium',
+      title: 'Prisma schema migration required before deployment',
+      category: 'database_migration',
+      fileA: 'prisma/schema.prisma',
+      fileB: 'prisma/migrations/migration.sql',
+      description: 'New composite index added to Task model.',
+      gitMergeStatus: 'structural_mismatch',
+      rootCause: 'Schema migration required for production PostgreSQL table',
+      runtimeBreakRisk: 'Queries expecting index may degrade performance if migration is not run.',
+      recommendedResolution: 'Execute `npx prisma migrate deploy` in release pipeline.',
+      diffA: '+ @@index([userId, status])',
+      diffB: '+ CREATE INDEX "Task_userId_status_idx" ON "Task"("userId", "status");',
     },
   ],
 };
@@ -290,24 +323,21 @@ export const taskflowReleaseComparison: BranchComparison = {
   changedApis: [
     {
       method: 'GET',
-      path: '/api/notifications',
-      changeType: 'added',
-      description: 'Fetch user notifications',
+      route: '/api/notifications',
+      impact: 'Fetch user notifications',
     },
   ],
   changedDatabaseStructures: [
     {
-      model: 'Task',
-      changeType: 'index_added',
-      description: 'Added performance indexes',
+      table: 'Task',
+      change: 'Added composite performance indexes',
     },
   ],
   changedDependencies: [
     {
-      name: 'package.json',
-      type: 'version',
-      from: '1.0.0',
-      to: '2.0.0',
+      name: 'repolens',
+      oldVersion: '1.0.0',
+      newVersion: '2.0.0',
     },
   ],
   conflicts: [],
@@ -323,17 +353,21 @@ export const branchComparisonData: Record<string, Record<string, BranchCompariso
     'main->refactor/database-optimization': taskflowDbOptimizationComparison,
     'main->release/v2.0': taskflowReleaseComparison,
   },
+  'demo_taskflow': {
+    'main->feature/dark-mode': taskflowDarkModeComparison,
+    'main->feature/notifications': taskflowNotificationsComparison,
+    'main->bugfix/auth-token-expiry': taskflowAuthBugfixComparison,
+    'main->refactor/database-optimization': taskflowDbOptimizationComparison,
+    'main->release/v2.0': taskflowReleaseComparison,
+  },
 };
 
-/**
- * Get mock branch comparison for a repository
- */
 export function getMockBranchComparison(
   repoId: string,
   baseBranch: string,
   targetBranch: string
 ): BranchComparison | null {
-  const repoComparisons = branchComparisonData[repoId];
+  const repoComparisons = branchComparisonData[repoId] || branchComparisonData['demo_taskflow'];
   if (!repoComparisons) return null;
 
   const key = `${baseBranch}->${targetBranch}`;

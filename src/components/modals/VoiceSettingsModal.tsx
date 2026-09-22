@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
 import { reviewAgents } from '../../config/agents';
-import { voiceEngine } from '../../services/voiceService';
 import { AgentId } from '../../types/agents';
 import {
   X,
   Volume2,
-  VolumeX,
-  Mic,
-  Sliders,
   Play,
-  Key,
-  Check,
-  RotateCcw,
 } from 'lucide-react';
 
 export const VoiceSettingsModal: React.FC = () => {
@@ -30,27 +23,12 @@ export const VoiceSettingsModal: React.FC = () => {
 
   if (!isVoiceSettingsModalOpen) return null;
 
-  const currentProfile = voiceSettings.agentProfiles[selectedAgentId];
-
   const handleTestAgentVoice = (agentId: AgentId) => {
     const profile = reviewAgents.find((a) => a.id === agentId);
     if (!profile) return;
     setTestingAgent(agentId);
     speakAgentBriefing(profile.voicePersona.sampleIntro, agentId);
     setTimeout(() => setTestingAgent(null), 3500);
-  };
-
-  const handleUpdateProfile = (field: 'pitch' | 'rate', value: number) => {
-    setVoiceSettings((prev) => ({
-      ...prev,
-      agentProfiles: {
-        ...prev.agentProfiles,
-        [selectedAgentId]: {
-          ...prev.agentProfiles[selectedAgentId],
-          [field]: value,
-        },
-      },
-    }));
   };
 
   return (
@@ -65,7 +43,7 @@ export const VoiceSettingsModal: React.FC = () => {
             <div>
               <h3 className="font-semibold text-xs text-white">5-Agent Voice & Audio Engine</h3>
               <p className="text-[11px] text-slate-400">
-                Configure distinct voice personas, pitch, rate, and speech recognition.
+                Configure voice playback, pitch, rate, and speech synthesis.
               </p>
             </div>
           </div>
@@ -94,7 +72,7 @@ export const VoiceSettingsModal: React.FC = () => {
                 type="checkbox"
                 checked={voiceSettings.enabled}
                 onChange={(e) =>
-                  setVoiceSettings((prev) => ({ ...prev, enabled: e.target.checked }))
+                  setVoiceSettings({ ...voiceSettings, enabled: e.target.checked })
                 }
                 className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
               />
@@ -109,10 +87,10 @@ export const VoiceSettingsModal: React.FC = () => {
                 type="checkbox"
                 checked={voiceSettings.autoPlayResponses}
                 onChange={(e) =>
-                  setVoiceSettings((prev) => ({
-                    ...prev,
+                  setVoiceSettings({
+                    ...voiceSettings,
                     autoPlayResponses: e.target.checked,
-                  }))
+                  })
                 }
                 className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
               />
@@ -122,7 +100,7 @@ export const VoiceSettingsModal: React.FC = () => {
           {/* 5-Agent Voice Selector Grid */}
           <div>
             <label className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-2">
-              Select Agent Voice Persona
+              Select Agent Persona to Preview
             </label>
             <div className="grid grid-cols-5 gap-1.5 font-mono">
               {reviewAgents.map((a) => {
@@ -145,62 +123,60 @@ export const VoiceSettingsModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Active Agent Voice Tuner */}
-          {currentProfile && (
-            <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-semibold text-slate-200 text-xs">
-                    {reviewAgents.find((a) => a.id === selectedAgentId)?.name}
-                  </span>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    {currentProfile.toneDescription}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleTestAgentVoice(selectedAgentId)}
-                  className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] flex items-center gap-1 transition-all"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>{testingAgent === selectedAgentId ? 'Speaking...' : 'Test Voice'}</span>
-                </button>
+          {/* Global Voice Speed & Pitch Tuners */}
+          <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold text-slate-200 text-xs">
+                  {reviewAgents.find((a) => a.id === selectedAgentId)?.name}
+                </span>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  {reviewAgents.find((a) => a.id === selectedAgentId)?.voicePersona.tone}
+                </p>
               </div>
-
-              {/* Pitch Slider */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-slate-400">Voice Pitch</span>
-                  <span className="text-indigo-400">{currentProfile.pitch.toFixed(2)}x</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.6"
-                  max="1.5"
-                  step="0.05"
-                  value={currentProfile.pitch}
-                  onChange={(e) => handleUpdateProfile('pitch', parseFloat(e.target.value))}
-                  className="w-full accent-indigo-500 cursor-pointer"
-                />
-              </div>
-
-              {/* Rate / Speed Slider */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-slate-400">Speech Rate</span>
-                  <span className="text-indigo-400">{currentProfile.rate.toFixed(2)}x</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.8"
-                  max="1.4"
-                  step="0.05"
-                  value={currentProfile.rate}
-                  onChange={(e) => handleUpdateProfile('rate', parseFloat(e.target.value))}
-                  className="w-full accent-indigo-500 cursor-pointer"
-                />
-              </div>
+              <button
+                onClick={() => handleTestAgentVoice(selectedAgentId)}
+                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] flex items-center gap-1 transition-all"
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>{testingAgent === selectedAgentId ? 'Speaking...' : 'Test Voice'}</span>
+              </button>
             </div>
-          )}
+
+            {/* Pitch Slider */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Voice Pitch</span>
+                <span className="text-indigo-400">{voiceSettings.pitch.toFixed(2)}x</span>
+              </div>
+              <input
+                type="range"
+                min="0.6"
+                max="1.5"
+                step="0.05"
+                value={voiceSettings.pitch}
+                onChange={(e) => setVoiceSettings({ ...voiceSettings, pitch: parseFloat(e.target.value) })}
+                className="w-full accent-indigo-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Rate / Speed Slider */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Speech Rate</span>
+                <span className="text-indigo-400">{voiceSettings.rate.toFixed(2)}x</span>
+              </div>
+              <input
+                type="range"
+                min="0.8"
+                max="1.4"
+                step="0.05"
+                value={voiceSettings.rate}
+                onChange={(e) => setVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
+                className="w-full accent-indigo-500 cursor-pointer"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

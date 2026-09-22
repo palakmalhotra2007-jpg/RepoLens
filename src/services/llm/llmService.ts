@@ -4,21 +4,21 @@ import { GeminiProvider } from './geminiProvider';
 import { APP_CONFIG } from '../../config/constants';
 
 /**
- * LLM Service - Manages multiple LLM providers with Ollama as default
+ * LLM Service - Manages multiple LLM providers with Ollama and Gemini
  */
 export class LLMService {
   private providers: Map<LLMProviderType, LLMProvider> = new Map();
-  private activeProvider: LLMProviderType = APP_CONFIG.llm.defaultProvider as LLMProviderType;
+  private activeProvider: LLMProviderType = (APP_CONFIG.llm.defaultProvider as LLMProviderType) || 'ollama';
   private statusCache: LLMProviderStatus | null = null;
   private lastStatusCheck: number = 0;
-  private readonly STATUS_CACHE_TTL = APP_CONFIG.api.timeout; // Use API timeout
+  private readonly STATUS_CACHE_TTL = 10000; // 10 seconds TTL
 
   constructor() {
     this.initializeProviders();
   }
 
   private initializeProviders(): void {
-    // Initialize Ollama (default, always available if running)
+    // Initialize Ollama
     const ollamaProvider = new OllamaProvider({
       type: 'ollama',
       baseUrl: APP_CONFIG.llm.ollama.baseUrl,
@@ -26,7 +26,7 @@ export class LLMService {
     });
     this.providers.set('ollama', ollamaProvider);
 
-    // Initialize Gemini (optional, requires API key)
+    // Initialize Gemini
     const geminiProvider = new GeminiProvider({
       type: 'gemini',
       apiKey: APP_CONFIG.llm.gemini.apiKey,
@@ -38,10 +38,9 @@ export class LLMService {
   /**
    * Check status of all providers
    */
-  async checkProviderStatus(): Promise<LLMProviderStatus> {
-    // Return cached status if recent
+  async checkProviderStatus(forceRefresh = false): Promise<LLMProviderStatus> {
     const now = Date.now();
-    if (this.statusCache && (now - this.lastStatusCheck) < this.STATUS_CACHE_TTL) {
+    if (!forceRefresh && this.statusCache && (now - this.lastStatusCheck) < this.STATUS_CACHE_TTL) {
       return this.statusCache;
     }
 
@@ -49,21 +48,21 @@ export class LLMService {
     const geminiProvider = this.providers.get('gemini');
 
     const [ollamaAvailable, geminiAvailable] = await Promise.all([
-      ollamaProvider?.isAvailable() || Promise.resolve(false),
-      geminiProvider?.isAvailable() || Promise.resolve(false),
+      ollamaProvider?.isAvailable().catch(() => false) ?? Promise.resolve(false),
+      geminiProvider?.isAvailable().catch(() => false) ?? Promise.resolve(false),
     ]);
 
     this.statusCache = {
       ollama: {
-        available: ollamaAvailable,
+        available: !!ollamaAvailable,
         model: APP_CONFIG.llm.ollama.defaultModel,
-        error: ollamaAvailable ? undefined : 'Ollama is not running or model not installed',
+        error: ollamaAvailable ? undefined : 'Ollama is not responding or target model not found',
       },
       gemini: {
-        available: geminiAvailable,
+        available: !!geminiAvailable,
         model: APP_CONFIG.llm.gemini.defaultModel,
         hasApiKey: !!APP_CONFIG.llm.gemini.apiKey,
-        error: geminiAvailable ? undefined : !APP_CONFIG.llm.gemini.apiKey ? 'API key not configured' : 'API error',
+        error: geminiAvailable ? undefined : !APP_CONFIG.llm.gemini.apiKey ? 'API key not configured' : 'Gemini API not reachable',
       },
     };
 
@@ -81,14 +80,14 @@ export class LLMService {
       return false;
     }
 
-    const available = await provider.isAvailable();
+    const available = await provider.isAvailable().catch(() => false);
     if (!available) {
-      console.warn(`[LLMService] Provider ${type} is not available`);
-      return false;
+      console.warn(`[LLMService] Provider ${type} is not currently responding`);
+      // Still set it so user preferences are respected, but log warning
     }
 
     this.activeProvider = type;
-    console.log(`[LLMService] Switched to provider: ${type}`);
+    console.log(`[LLMService] Active provider set to: ${type}`);
     return true;
   }
 
@@ -103,51 +102,73 @@ export class LLMService {
    * Auto-select best available provider
    */
   async autoSelectProvider(): Promise<LLMProviderType> {
-    const status = await this.checkProviderStatus();
+    const status = await this.checkProviderStatus(true);
     
-    // Prefer Ollama (local, free)
+    // Check preferred active provider first
+    const preferred = this.providers.get(this.activeProvider);
+    if (preferred && (await preferred.isAvailable().catch(() => false))) {
+      return this.activeProvider;
+    }
+
+    // Fallback: Check Ollama
     if (status.ollama.available) {
       this.activeProvider = 'ollama';
       return 'ollama';
     }
     
-    // Fallback to Gemini if available
+    // Fallback: Check Gemini
     if (status.gemini.available) {
       this.activeProvider = 'gemini';
       return 'gemini';
     }
     
-    // No providers available
-    console.error('[LLMService] No LLM providers available');
-    return 'ollama'; // Default even if not available
+    return this.activeProvider;
   }
 
   /**
-   * Send chat request to active provider
+   * Send chat request to active provider with auto-fallback
    */
   async chat(messages: LLMMessage[], options?: {
     temperature?: number;
     maxTokens?: number;
     preferredProvider?: LLMProviderType;
   }): Promise<LLMResponse> {
-    let provider = this.providers.get(options?.preferredProvider || this.activeProvider);
-    
-    // If preferred provider not available, try active provider
-    if (!provider || !(await provider.isAvailable())) {
-      await this.autoSelectProvider();
-      provider = this.providers.get(this.activeProvider);
+    const targetType = options?.preferredProvider || this.activeProvider;
+    let primaryProvider = this.providers.get(targetType);
+    let secondaryType: LLMProviderType = targetType === 'ollama' ? 'gemini' : 'ollama';
+    let secondaryProvider = this.providers.get(secondaryType);
+
+    // Try primary provider
+    if (primaryProvider) {
+      try {
+        const isAvail = await primaryProvider.isAvailable();
+        if (isAvail) {
+          return await primaryProvider.chat(messages, options);
+        }
+      } catch (primaryErr) {
+        console.warn(`[LLMService] Primary provider (${targetType}) failed, trying fallback:`, primaryErr);
+      }
     }
 
-    if (!provider) {
-      throw new Error('No LLM provider available. Please install Ollama or configure Gemini API key.');
+    // Try secondary provider as fallback
+    if (secondaryProvider) {
+      try {
+        const isAvail = await secondaryProvider.isAvailable();
+        if (isAvail) {
+          console.log(`[LLMService] Falling back to secondary provider (${secondaryType})`);
+          return await secondaryProvider.chat(messages, options);
+        }
+      } catch (secondaryErr) {
+        console.warn(`[LLMService] Secondary provider (${secondaryType}) failed:`, secondaryErr);
+      }
     }
 
-    const isAvailable = await provider.isAvailable();
-    if (!isAvailable) {
-      throw new Error(`${provider.type} is not available. Please check your configuration.`);
+    // If both failed, try one direct attempt with primary to capture detailed error message
+    if (primaryProvider) {
+      return await primaryProvider.chat(messages, options);
     }
 
-    return provider.chat(messages, options);
+    throw new Error('No LLM provider available. Please check Ollama connection or configure your Gemini API key.');
   }
 
   /**

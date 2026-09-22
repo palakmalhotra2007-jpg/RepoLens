@@ -142,7 +142,7 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
   const docFiles = fileNodes.filter(f => /\.(md|txt|rst)$/i.test(f.name));
   
   // Parse dependencies from package.json if exists
-  const dependencies: Array<{ name: string; version: string; type: 'dependency' | 'devDependency' }> = [];
+  const dependencies: import('../types/repository').DependencyItem[] = [];
   const packageJsonNode = fileMap.get('package.json');
   if (packageJsonNode) {
     try {
@@ -151,12 +151,12 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
       
       if (packageJson.dependencies) {
         Object.entries(packageJson.dependencies).forEach(([name, version]) => {
-          dependencies.push({ name, version: version as string, type: 'dependency' });
+          dependencies.push({ name, version: version as string, type: 'production' });
         });
       }
       if (packageJson.devDependencies) {
         Object.entries(packageJson.devDependencies).forEach(([name, version]) => {
-          dependencies.push({ name, version: version as string, type: 'devDependency' });
+          dependencies.push({ name, version: version as string, type: 'development' });
         });
       }
     } catch (e) {

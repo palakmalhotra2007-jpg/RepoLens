@@ -10,21 +10,23 @@ export const APP_CONFIG = {
     github: {
       baseUrl: import.meta.env.VITE_GITHUB_API_BASE || 'https://api.github.com',
       rawBaseUrl: import.meta.env.VITE_GITHUB_RAW_BASE || 'https://raw.githubusercontent.com',
+      token: import.meta.env.VITE_GITHUB_TOKEN || '',
     },
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
   },
 
   // LLM Configuration
   llm: {
-    defaultProvider: import.meta.env.VITE_DEFAULT_LLM_PROVIDER || 'ollama',
+    defaultProvider: import.meta.env.VITE_LLM_PROVIDER || import.meta.env.VITE_DEFAULT_LLM_PROVIDER || 'ollama',
     ollama: {
       baseUrl: import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434',
       defaultModel: import.meta.env.VITE_OLLAMA_MODEL || 'qwen2.5:3b',
+      enabled: import.meta.env.VITE_OLLAMA_ENABLED !== 'false',
     },
     gemini: {
       apiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
-      defaultModel: import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash-8b',
-      baseUrl: import.meta.env.VITE_GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com',
+      defaultModel: import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash-latest',
+      baseUrl: import.meta.env.VITE_GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     },
   },
 

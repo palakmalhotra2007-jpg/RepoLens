@@ -1,17 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { RepositoryData, FileNode, HotspotItem, DeadCodeItem, DuplicateCodeItem } from '../types/repository';
-import { ReviewFinding, OrchestrationSummary, AgentId, SeverityLevel, DebateStageItem, ReviewState } from '../types/agents';
+import { RepositoryData, FileNode } from '../types/repository';
+import { ReviewFinding, OrchestrationSummary, AgentId, SeverityLevel, ReviewState } from '../types/agents';
 import { MergeConflictBlock, SemanticConflictAlert, BranchComparison, ComparisonState } from '../types/merge';
 import { ChatMessage, JumpAction } from '../types/chat';
 import { FeatureChangePlan } from '../types/impact';
 import { reviewAgents } from '../config/agents';
-import { createEmptyRepository, createEmptyBranchComparison } from '../config/defaultRepository';
+import { comprehensiveDemoRepo } from '../data/comprehensiveDemoRepo';
+import { createEmptyBranchComparison } from '../config/defaultRepository';
 import { findFileByPath, flattenFileTree } from '../services/repoParser';
 import { ragService } from '../services/ragService';
 import { APP_CONFIG, MESSAGES, AGENT_CONFIG } from '../config/constants';
+import { llmService } from '../services/llm/llmService';
+import { llmAnalyzer } from '../services/llm/llmAnalyzer';
 import confetti from 'canvas-confetti';
 
-// Voice-related types (placeholder for missing voice functionality)
+// Voice-related types
 interface VoiceSettings {
   enabled: boolean;
   rate: number;
@@ -27,27 +30,87 @@ interface VoicePlayback {
   progressPercent: number;
 }
 
-// Voice engine placeholder (should be replaced with actual implementation)
+// Browser Web Speech API Engine
 const voiceEngine = {
-  speak: (text: string, agentId: AgentId, settings: VoiceSettings, onStart?: () => void, onEnd?: () => void) => {
-    // Placeholder implementation
-    if (onStart) onStart();
-    setTimeout(() => {
+  speak: (
+    text: string,
+    agentId: AgentId,
+    settings: VoiceSettings,
+    onStart?: () => void,
+    onEnd?: () => void
+  ) => {
+    if (!('speechSynthesis' in window)) {
       if (onEnd) onEnd();
-    }, 1000);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = settings.rate || 1.0;
+    utterance.pitch = settings.pitch || 1.0;
+    utterance.volume = settings.volume || 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      // Pick voice variation based on agent
+      const voiceIndex = Math.abs(agentId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % voices.length;
+      utterance.voice = voices[voiceIndex] || voices[0];
+    }
+
+    if (onStart) utterance.onstart = () => onStart();
+    utterance.onend = () => {
+      if (onEnd) onEnd();
+    };
+    utterance.onerror = () => {
+      if (onEnd) onEnd();
+    };
+
+    window.speechSynthesis.speak(utterance);
   },
   stopSpeaking: () => {
-    // Placeholder implementation
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
   },
-  startListening: (onResult: (text: string) => void, onError: (error: any) => void, onEnd: () => void) => {
-    // Placeholder implementation
-    setTimeout(() => {
-      onResult('Voice input not implemented');
+  startListening: (
+    onResult: (text: string) => void,
+    onError: (error: any) => void,
+    onEnd: () => void
+  ) => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      onError('Speech recognition not supported in this browser.');
       onEnd();
-    }, 1000);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript || '';
+        onResult(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        onError(event.error);
+      };
+
+      recognition.onend = () => {
+        onEnd();
+      };
+
+      recognition.start();
+    } catch (e) {
+      onError(e);
+      onEnd();
+    }
   },
   stopListening: () => {
-    // Placeholder implementation
+    // Handled by browser SpeechRecognition onend
   },
 };
 
@@ -152,15 +215,20 @@ interface RepoStoreContextType {
 const RepoContext = createContext<RepoStoreContextType | undefined>(undefined);
 
 export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [repo, setRepo] = useState<RepositoryData>(createEmptyRepository());
+  // Default to TaskFlow demo repository on launch
+  const [repo, setRepo] = useState<RepositoryData>(comprehensiveDemoRepo);
   const [activeView, setActiveView] = useState<AppView>(APP_CONFIG.ui.defaultView);
-  const [activeFile, setActiveFile] = useState<FileNode | null>(null);
+  const [activeFile, setActiveFile] = useState<FileNode | null>(() => {
+    return findFileByPath(comprehensiveDemoRepo.rootFiles, 'src/pages/Dashboard.tsx') ||
+           findFileByPath(comprehensiveDemoRepo.rootFiles, 'README.md') ||
+           comprehensiveDemoRepo.rootFiles[0] || null;
+  });
   const [activeLine, setActiveLine] = useState<number | null>(null);
 
-  // Initialize RAG service with repository on mount
+  // Initialize RAG service with repository whenever repository changes
   useEffect(() => {
     ragService.indexRepository(repo);
-    console.log('[RAG] Repository indexed:', ragService.getIndexStats());
+    console.log('[RAG] Indexed repository files:', ragService.getIndexStats());
   }, [repo]);
 
   // Modals & Panels
@@ -188,7 +256,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
-  // Multi-Agent Review State (Starts as 'not_started' - only begins on explicit click)
+  // Multi-Agent Review State (Starts as 'not_started')
   const [reviewState, setReviewState] = useState<ReviewState>('not_started');
   const [reviewFindings, setReviewFindings] = useState<ReviewFinding[]>([]);
   const [orchestrationSummary, setOrchestrationSummary] = useState<OrchestrationSummary>({
@@ -200,8 +268,8 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     infoCount: 0,
     crossAgentVerifications: 0,
     challengesResolved: 0,
-    overallHealthScore: 0,
-    readinessVerdict: 'review_required',
+    overallHealthScore: 100,
+    readinessVerdict: 'ready_to_merge',
     finalReviewerNotes: '',
     orchestratorAudioSummary: import.meta.env.VITE_REVIEW_NOT_RUN_MESSAGE || 'Review not yet run. Click "Run 5-Agent Review" to analyze the repository.',
   });
@@ -213,7 +281,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isReviewRunning, setIsReviewRunning] = useState(false);
   const [reviewProgress, setReviewProgress] = useState({ label: '', percent: 0, stage: '' });
 
-  // Merge Conflict & Comparison State (Starts as 'no_comparison' - only compares when version/branch is selected)
+  // Merge Conflict & Comparison State
   const [comparisonState, setComparisonState] = useState<ComparisonState>('no_comparison');
   const [branchComparison, setBranchComparison] = useState<BranchComparison>(createEmptyBranchComparison());
   const [selectedConflict, setSelectedConflict] = useState<MergeConflictBlock | null>(null);
@@ -224,22 +292,26 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeChangePlan, setActiveChangePlan] = useState<FeatureChangePlan | null>(null);
 
   // AI Chat State
+  const createWelcomeMessage = (targetRepo: RepositoryData): ChatMessage => ({
+    id: `msg_welcome_${Date.now()}`,
+    sender: 'assistant',
+    respondingAgentId: AGENT_CONFIG.defaultAgentId,
+    content: `Engineering Intelligence ready for **${targetRepo.name}** (${targetRepo.currentBranch} branch).
+
+I have indexed the codebase across ${targetRepo.languages.map((l) => l.name).join(', ') || 'all files'}. Ask any technical question, explore dependencies, or query one of the 5 specialized engineering agents.`,
+    timestamp: MESSAGES.timestamps.justNow,
+    jumpActions: [
+      {
+        label: `Explore ${targetRepo.name} Overview`,
+        type: 'code',
+        targetId: targetRepo.rootFiles[0]?.path || 'README.md',
+        description: 'View repository files and structure',
+      },
+    ],
+  });
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: import.meta.env.VITE_WELCOME_MESSAGE_ID || 'msg_welcome',
-      sender: 'assistant',
-      respondingAgentId: AGENT_CONFIG.defaultAgentId,
-      content: `${APP_CONFIG.chat.welcomeMessage} for ${repo.name}.
-
-I understand the full codebase architecture across React, Node.js/Express, PostgreSQL/Prisma, and Stripe.
-
-Ask any technical question or query one of the 5 specialized review agents:`,
-      timestamp: MESSAGES.timestamps.justNow,
-      jumpActions: [
-        { label: 'Where is authentication?', type: 'code', targetId: 'server/middleware/authGuard.ts', line: 4, description: 'JWT pipeline in authGuard.ts' },
-        { label: 'View Checkout Dependency Graph', type: 'impact_node', targetId: 'api_create_intent', description: 'Topology for /api/checkout/create-intent' },
-      ]
-    }
+    createWelcomeMessage(comprehensiveDemoRepo),
   ]);
 
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K)
@@ -253,6 +325,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
         setIsCommandPaletteOpen(false);
         setIsConnectModalOpen(false);
         setIsSettingsModalOpen(false);
+        setIsLLMSettingsModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -262,7 +335,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
   const selectFileByPath = async (path: string, line?: number) => {
     const file = findFileByPath(repo.rootFiles, path);
     if (file) {
-      // If file content not loaded and repo is from GitHub, fetch it
+      // If file content is not yet loaded from GitHub, fetch it dynamically
       if (!file.content && !repo.isDemo && repo.fullName) {
         try {
           const { fetchRawFileContent } = await import('../services/githubFetcher');
@@ -270,13 +343,12 @@ Ask any technical question or query one of the 5 specialized review agents:`,
           const content = await fetchRawFileContent(repo.fullName, repo.currentBranch, file.path);
           file.content = content;
           
-          // Extract symbols from the loaded content
           const { extractCodeSymbols } = await import('../services/repoParser');
           file.symbols = extractCodeSymbols(file.name, content);
           console.log(`[FileLoader] Successfully loaded: ${file.path}`);
         } catch (error) {
           console.error(`[FileLoader] Failed to load file ${file.path}:`, error);
-          file.content = `// ${MESSAGES.errors.loadFailed}\n// ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}\n\n// This file could not be loaded from GitHub.\n// Please check:\n// 1. Your GitHub token is valid\n// 2. The repository is accessible\n// 3. The file path exists: ${file.path}`;
+          file.content = `// ${MESSAGES.errors.loadFailed}\n// ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}\n\n// File path: ${file.path}`;
         }
       }
       
@@ -284,19 +356,22 @@ Ask any technical question or query one of the 5 specialized review agents:`,
       if (line) setActiveLine(line);
       setActiveView('explore');
     } else {
-      console.warn(`[FileLoader] File not found in tree: ${path}`);
+      console.warn(`[FileLoader] File not found in repository tree: ${path}`);
     }
   };
 
   const switchRepo = (newRepo: RepositoryData) => {
     setRepo(newRepo);
-    const firstFile = findFileByPath(newRepo.rootFiles, 'src/pages/Checkout.tsx') ||
+    const firstFile = findFileByPath(newRepo.rootFiles, 'src/pages/Dashboard.tsx') ||
+                     findFileByPath(newRepo.rootFiles, 'src/pages/Checkout.tsx') ||
                      findFileByPath(newRepo.rootFiles, 'README.md') ||
+                     findFileByPath(newRepo.rootFiles, 'readme.md') ||
                      newRepo.rootFiles[0];
     setActiveFile(firstFile || null);
-    setActiveView(APP_CONFIG.ui.defaultView);
+    setActiveView('overview');
     setIsConnectModalOpen(false);
-    // Reset review and merge comparison state for new repo
+    
+    // Reset review, debate, and comparison states for the new repository
     setReviewState('not_started');
     setReviewFindings([]);
     setSelectedFinding(null);
@@ -304,6 +379,11 @@ Ask any technical question or query one of the 5 specialized review agents:`,
     setComparisonState('no_comparison');
     setBranchComparison(createEmptyBranchComparison());
     setSelectedConflict(null);
+    setSelectedImpactNodeId(null);
+    setActiveChangePlan(null);
+
+    // Refresh chat messages with welcome for new repo
+    setChatMessages([createWelcomeMessage(newRepo)]);
   };
 
   const switchBranch = (branch: string) => {
@@ -341,7 +421,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
 
   // Play Multi-Agent Audio Debate
   const playMultiAgentDebate = async (finding: ReviewFinding) => {
-    if (!voiceSettings.enabled || !finding.debateStages?.length) return;
+    if (!finding.debateStages?.length) return;
 
     stopAudioPlayback();
 
@@ -366,7 +446,6 @@ Ask any technical question or query one of the 5 specialized review agents:`,
         );
       });
 
-      // Brief pause between speaker turns
       await new Promise((r) => setTimeout(r, 400));
     }
 
@@ -400,7 +479,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
       },
       (err) => {
         setIsRecordingVoice(false);
-        console.warn('Mic input error:', err);
+        console.warn('[Voice] Microphone input error:', err);
       },
       () => {
         setIsRecordingVoice(false);
@@ -413,16 +492,13 @@ Ask any technical question or query one of the 5 specialized review agents:`,
     setIsRecordingVoice(false);
   };
 
-  // 5-Agent Review Execution Flow: Not Started -> Running -> Debating -> Consensus -> Completed
+  // 5-Agent Review Execution Flow
   const runReview = async () => {
     setIsReviewRunning(true);
     setReviewState('running');
     setActiveView('review');
 
     try {
-      // Use LLM-powered analysis
-      const { llmAnalyzer } = await import('../services/llm/llmAnalyzer');
-      
       const { findings, summary } = await llmAnalyzer.analyzeRepository(repo, (label, percent) => {
         if (percent < 30) {
           setReviewState('running');
@@ -443,15 +519,14 @@ Ask any technical question or query one of the 5 specialized review agents:`,
       setIsReviewRunning(false);
       confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
 
-      // Optional audio summary
       if (voiceSettings?.autoPlayResponses) {
         speakAgentBriefing(summary.orchestratorAudioSummary, AGENT_CONFIG.defaultAgentId);
       }
     } catch (error) {
-      console.error('[Review] Analysis failed:', error);
+      console.error('[Review] Multi-agent analysis failed:', error);
       setReviewState('not_started');
       setIsReviewRunning(false);
-      alert(`${MESSAGES.errors.reviewFailed}: ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}.\n\n${MESSAGES.errors.llmNotConfigured}`);
+      alert(`${MESSAGES.errors.reviewFailed}: ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}`);
     }
   };
 
@@ -473,26 +548,21 @@ Ask any technical question or query one of the 5 specialized review agents:`,
     );
   };
 
-  // Branch Comparison Flow: No Comparison -> Comparing -> Conflicts Found / No Conflicts
+  // Branch Comparison Flow
   const compareBranches = async (baseBranch: string, targetBranch: string) => {
     setComparisonState('comparing');
-    
-    // Simulate loading delay
-    await new Promise((r) => setTimeout(r, 800));
-    
-    // For demo repositories, use mock comparison data
+    await new Promise((r) => setTimeout(r, 600));
+
     if (repo.isDemo) {
       const { getMockBranchComparison } = await import('../data/mockBranchComparisons');
       const mockComparison = getMockBranchComparison(repo.id, baseBranch, targetBranch);
-      
       if (mockComparison) {
         setBranchComparison(mockComparison);
         setComparisonState(mockComparison.comparisonState);
         return;
       }
     }
-    
-    // For non-demo repos or if no mock data available, show empty comparison
+
     setBranchComparison({
       comparisonState: 'no_conflicts',
       baseBranch,
@@ -513,7 +583,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
       conflicts: [],
       semanticAlerts: [],
     });
-    
+
     setComparisonState('no_conflicts');
   };
 
@@ -546,15 +616,14 @@ Ask any technical question or query one of the 5 specialized review agents:`,
           };
         }
         return c;
-      })
+      }),
     }));
     confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
   };
 
   const generateChangePlanForPrompt = (prompt: string) => {
-    // Real change plan generation would happen here with LLM
-    alert(`${import.meta.env.VITE_CHANGE_PLAN_MESSAGE || 'Change plan generation requires LLM integration. Feature in development.'}`);
-    setActiveChangePlan(null);
+    sendChatMessage(`What is the step-by-step change plan and risk analysis for: "${prompt}"?`);
+    setActiveView('copilot');
   };
 
   const handleJumpAction = (action: JumpAction) => {
@@ -563,7 +632,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
         selectFileByPath(action.targetId, action.line);
         break;
       case 'finding': {
-        const f = reviewFindings.find(item => item.id === action.targetId);
+        const f = reviewFindings.find((item) => item.id === action.targetId);
         if (f) {
           setSelectedFinding(f);
           setActiveView('review');
@@ -571,11 +640,11 @@ Ask any technical question or query one of the 5 specialized review agents:`,
         break;
       }
       case 'debate': {
-        const f = reviewFindings.find(item => item.id === action.targetId);
+        const f = reviewFindings.find((item) => item.id === action.targetId);
         if (f) {
           setActiveDebateFinding(f);
           setActiveDebateStageIndex(0);
-          setActiveView('review');
+          setActiveView('debate');
         }
         break;
       }
@@ -584,7 +653,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
         setActiveView('impact');
         break;
       case 'merge_conflict': {
-        const c = branchComparison.conflicts.find(item => item.id === action.targetId);
+        const c = branchComparison.conflicts.find((item) => item.id === action.targetId);
         if (c) {
           setSelectedConflict(c);
           setActiveView('merge');
@@ -594,6 +663,7 @@ Ask any technical question or query one of the 5 specialized review agents:`,
     }
   };
 
+  // AI Copilot Real Multi-Turn Chat
   const sendChatMessage = (content: string, targetAgentId?: AgentId) => {
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
@@ -602,103 +672,111 @@ Ask any technical question or query one of the 5 specialized review agents:`,
       timestamp: MESSAGES.timestamps.justNow,
     };
 
-    setChatMessages((prev) => [...prev, userMsg]);
-
-    // Add loading message
     const loadingMsgId = `loading_${Date.now()}`;
+    const targetAgent = reviewAgents.find((a) => a.id === targetAgentId) || {
+      id: AGENT_CONFIG.defaultAgentId,
+      name: AGENT_CONFIG.orchestrator.name,
+      role: 'Engineering Intelligence Assistant',
+    };
+
     const loadingMsg: ChatMessage = {
       id: loadingMsgId,
       sender: 'assistant',
       respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
-      content: '⏳ Analyzing your question and searching the codebase...',
+      content: `⏳ ${targetAgent.name} is analyzing the codebase and formulating a response...`,
       timestamp: MESSAGES.timestamps.justNow,
     };
-    setChatMessages((prev) => [...prev, loadingMsg]);
 
-    // Run async operation without blocking
+    // Capture conversation history for LLM
+    const priorChat = chatMessages.filter((m) => m.id !== 'msg_welcome' && !m.id.startsWith('msg_welcome_'));
+    const conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      ...priorChat.map((m) => ({
+        role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
+        content: m.content,
+      })),
+      { role: 'user' as const, content },
+    ];
+
+    setChatMessages((prev) => [...prev, userMsg, loadingMsg]);
+
     (async () => {
       try {
-        // Use RAG service to find relevant context
-        const ragContext = ragService.searchContext(content, 5);
-        const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
+        // Retrieve relevant code snippets via RAG
+        const ragContext = ragService.searchContext(content, 6);
+        const codeReferences = ragContext.length > 0 ? ragContext.map((result) => ({
           file: result.file,
           lineStart: result.lineStart,
           lineEnd: result.lineEnd,
           snippet: result.content,
         })) : undefined;
 
-        // Build context for LLM
-        let contextText = `Repository: ${repo.name}\n`;
+        // Build comprehensive repository context
+        const allFiles = flattenFileTree(repo.rootFiles);
+        const fileListSample = allFiles.slice(0, 30).map((f) => f.path).join(', ');
+
+        let contextText = `=== REPOSITORY CONTEXT ===\n`;
+        contextText += `Name: ${repo.name} (${repo.fullName || repo.name})\n`;
         contextText += `Description: ${repo.description}\n`;
-        contextText += `Languages: ${repo.languages.map(l => l.name).join(', ')}\n`;
-        contextText += `Frameworks: ${repo.frameworks.map(f => f.name).join(', ')}\n\n`;
-        
+        contextText += `Current Branch: ${repo.currentBranch}\n`;
+        contextText += `Languages: ${repo.languages.map((l) => `${l.name} (${l.percentage}%)`).join(', ')}\n`;
+        if (repo.dependencies.length > 0) {
+          contextText += `Key Dependencies: ${repo.dependencies.slice(0, 10).map((d) => d.name).join(', ')}\n`;
+        }
+        contextText += `File Structure Sample: ${fileListSample}\n`;
+
+        if (activeFile) {
+          contextText += `\nCurrently Open File: ${activeFile.path}\n`;
+          if (activeFile.content) {
+            contextText += `Active File Snippet:\n\`\`\`\n${activeFile.content.slice(0, 1200)}\n\`\`\`\n`;
+          }
+        }
+
         if (ragContext.length > 0) {
-          contextText += `Relevant Code Context:\n`;
+          contextText += `\nRelevant Code Search Matches (RAG):\n`;
           ragContext.forEach((ctx, idx) => {
-            contextText += `\n[${idx + 1}] ${ctx.file} (lines ${ctx.lineStart}-${ctx.lineEnd}):\n`;
-            contextText += `${ctx.content.substring(0, 500)}\n`;
+            contextText += `\n[Match ${idx + 1}] File: ${ctx.file} (Lines ${ctx.lineStart}-${ctx.lineEnd}):\n`;
+            contextText += `\`\`\`\n${ctx.content.slice(0, 500)}\n\`\`\`\n`;
           });
         }
 
-        // Import and use LLM service
-        const { llmService } = await import('../services/llm/llmService');
-        
-        // Check if LLM is available
-        const status = await llmService.checkProviderStatus();
-        console.log('[Chat] LLM Status:', status);
-        
-        if (!status.ollama.available && !status.gemini.available) {
-          throw new Error('No LLM provider available. Please ensure Ollama is running or configure Gemini API key.');
-        }
+        const systemPrompt = `You are ${targetAgent.name}, a ${targetAgent.role} for the RepoLens repository intelligence platform.
 
-        // Get agent-specific system prompt
-        const agentProfile = reviewAgents.find(a => a.id === targetAgentId) || {
-          name: AGENT_CONFIG.orchestrator.name,
-          role: 'Repository Intelligence Assistant',
-        };
-
-        const systemPrompt = `You are ${agentProfile.name}, a ${agentProfile.role}.
-
-You are helping a developer understand their codebase. Answer questions about the repository in a helpful, conversational manner like ChatGPT would.
+Your mission is to provide accurate, deep technical answers about the selected repository.
 
 Guidelines:
-- Be conversational and friendly
-- Provide specific, actionable insights
-- Reference actual code when relevant
-- Explain technical concepts clearly
-- Suggest next steps or related questions
-- Keep responses concise but informative (2-4 paragraphs)
+- Base your answers strictly on the provided repository context and code references.
+- DO NOT hallucinate files, functions, or dependencies that are not in the repository.
+- Provide clear markdown formatting, code snippets, and call-site line numbers where relevant.
+- Be actionable, insightful, and conversational.
 
-${contextText}
+${contextText}`;
 
-Answer the user's question based on this repository context.`;
-
-        console.log('[Chat] Sending to LLM...');
-        const response = await llmService.chat([
+        // Format multi-turn messages for LLM
+        const llmMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: content },
-        ], {
-          temperature: 0.7,
-          maxTokens: 1024,
+          ...conversationHistory.slice(-8), // Keep last 8 conversational turns
+        ];
+
+        console.log(`[Chat] Querying LLM (${llmService.getActiveProvider()})...`);
+        const response = await llmService.chat(llmMessages, {
+          temperature: 0.4,
+          maxTokens: 1500,
         });
 
-        console.log('[Chat] Got LLM response:', response);
-
-        // Generate jump actions from RAG context
-        const jumpActions: JumpAction[] = ragContext.map(ctx => ({
-          label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
+        // Dynamic jump actions generated from RAG results
+        const jumpActions: JumpAction[] = ragContext.slice(0, 3).map((ctx) => ({
+          label: `Open ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
           type: 'code' as const,
           targetId: ctx.file,
           line: ctx.lineStart,
-          description: `Relevance: ${Math.round(ctx.relevanceScore * 100)}%`,
+          description: `Line ${ctx.lineStart} in ${ctx.file}`,
         }));
 
-        // Remove loading message and add AI response
+        // Replace loading message with real response
         setChatMessages((prev) => {
-          const withoutLoading = prev.filter(m => m.id !== loadingMsgId);
+          const filtered = prev.filter((m) => m.id !== loadingMsgId);
           return [
-            ...withoutLoading,
+            ...filtered,
             {
               id: `ast_${Date.now()}`,
               sender: 'assistant' as const,
@@ -706,139 +784,44 @@ Answer the user's question based on this repository context.`;
               content: response.content,
               timestamp: MESSAGES.timestamps.justNow,
               codeReferences,
-              jumpActions,
+              jumpActions: jumpActions.length > 0 ? jumpActions : undefined,
             },
           ];
         });
 
-        // Auto speech if enabled
         if (voiceSettings?.autoPlayResponses) {
           speakAgentBriefing(response.content.slice(0, 200), targetAgentId || AGENT_CONFIG.defaultAgentId);
         }
       } catch (error) {
-        console.error('[Chat] AI response failed:', error);
-        
-        // Fallback to hardcoded response if LLM fails
-        const respondingAgent: AgentId = targetAgentId || AGENT_CONFIG.defaultAgentId;
-        const ragContext = ragService.searchContext(content, 5);
-        
-        let fallbackContent = `I encountered an issue connecting to the AI service.\n\n`;
-        
-        if (ragContext.length > 0) {
-          fallbackContent += `However, I found ${ragContext.length} relevant code sections:\n\n`;
-          ragContext.forEach((ctx, idx) => {
-            fallbackContent += `${idx + 1}. **${ctx.file}** (lines ${ctx.lineStart}-${ctx.lineEnd})\n`;
-          });
-          fallbackContent += `\nClick the code references below to explore them.`;
-        } else {
-          fallbackContent += `**Error Details:**\n${error instanceof Error ? error.message : 'Unknown error'}\n\n`;
-          fallbackContent += `**Troubleshooting:**\n`;
-          fallbackContent += `1. Ensure Ollama is running: \`ollama list\` in terminal\n`;
-          fallbackContent += `2. Check if model is loaded: \`ollama run qwen2.5:3b\`\n`;
-          fallbackContent += `3. Or configure Gemini API key in .env.local\n\n`;
-          fallbackContent += `Try asking a simpler question while I check the connection.`;
-        }
-
-        const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
-          file: result.file,
-          lineStart: result.lineStart,
-          lineEnd: result.lineEnd,
-          snippet: result.content,
-        })) : undefined;
-
-        const jumpActions: JumpAction[] = ragContext.map(ctx => ({
-          label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
-          type: 'code' as const,
-          targetId: ctx.file,
-          line: ctx.lineStart,
-        }));
+        console.error('[Chat] LLM error:', error);
+        const errMsg = error instanceof Error ? error.message : 'Unknown AI service error';
 
         setChatMessages((prev) => {
-          const withoutLoading = prev.filter(m => m.id !== loadingMsgId);
+          const filtered = prev.filter((m) => m.id !== loadingMsgId);
           return [
-            ...withoutLoading,
+            ...filtered,
             {
               id: `ast_${Date.now()}`,
               sender: 'assistant' as const,
-              respondingAgentId: respondingAgent,
-              content: fallbackContent,
+              respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
+              content: `⚠️ **AI Service Error**: Could not complete request.
+
+**Details**: ${errMsg}
+
+**Troubleshooting**:
+1. If using Ollama, ensure it is running on your machine (\`ollama run qwen2.5:3b\`).
+2. If using Gemini, verify your \`VITE_GEMINI_API_KEY\` is configured in \`.env.local\`.
+3. You can configure providers in the **LLM Settings** modal.`,
               timestamp: MESSAGES.timestamps.justNow,
-              codeReferences,
-              jumpActions,
             },
           ];
         });
       }
     })();
   };
-            id: `ast_${Date.now()}`,
-            sender: 'assistant' as const,
-            respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
-            content: response.content,
-            timestamp: MESSAGES.timestamps.justNow,
-            codeReferences,
-            jumpActions,
-          },
-        ];
-      });
-
-      // Auto speech if enabled
-      if (voiceSettings?.autoPlayResponses) {
-        speakAgentBriefing(response.content.slice(0, 200), targetAgentId || AGENT_CONFIG.defaultAgentId);
-      }
-    } catch (error) {
-      console.error('[Chat] AI response failed:', error);
-      
-      // Fallback to hardcoded response if LLM fails
-      const respondingAgent: AgentId = targetAgentId || AGENT_CONFIG.defaultAgentId;
-      const ragContext = ragService.searchContext(content, 5);
-      
-      let fallbackContent = `I encountered an issue connecting to the AI service. `;
-      
-      if (ragContext.length > 0) {
-        fallbackContent += `However, I found ${ragContext.length} relevant code sections:\n\n`;
-        ragContext.forEach((ctx, idx) => {
-          fallbackContent += `${idx + 1}. **${ctx.file}** (lines ${ctx.lineStart}-${ctx.lineEnd})\n`;
-        });
-        fallbackContent += `\nClick the code references above to explore them.`;
-      } else {
-        fallbackContent += `Please ensure Ollama is running or configure your Gemini API key in the .env.local file.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      }
-
-      const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
-        file: result.file,
-        lineStart: result.lineStart,
-        lineEnd: result.lineEnd,
-        snippet: result.content,
-      })) : undefined;
-
-      const jumpActions: JumpAction[] = ragContext.map(ctx => ({
-        label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
-        type: 'code' as const,
-        targetId: ctx.file,
-        line: ctx.lineStart,
-      }));
-
-      setChatMessages((prev) => {
-        const withoutLoading = prev.filter(m => m.id !== loadingMsg.id);
-        return [
-          ...withoutLoading,
-          {
-            id: `ast_${Date.now()}`,
-            sender: 'assistant' as const,
-            respondingAgentId: respondingAgent,
-            content: fallbackContent,
-            timestamp: MESSAGES.timestamps.justNow,
-            codeReferences,
-            jumpActions,
-          },
-        ];
-      });
-    }
-  };
 
   const clearChat = () => {
-    setChatMessages([]);
+    setChatMessages([createWelcomeMessage(repo)]);
   };
 
   const contextValue: RepoStoreContextType = {

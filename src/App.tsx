@@ -11,7 +11,6 @@ import { AgentDebateView } from './components/review/AgentDebateView';
 import { MergeConflictView } from './components/merge/MergeConflictView';
 import { ImpactGraphView } from './components/impact/ImpactGraphView';
 import { GitHistoryView } from './components/git/GitHistoryView';
-import { RepoChatView } from './components/chat/RepoChatView';
 import { RepoCopilotView } from './components/chat/RepoCopilotView';
 import { ConnectRepoModal } from './components/modals/ConnectRepoModal';
 import { SettingsModal } from './components/modals/SettingsModal';
@@ -36,9 +35,8 @@ const WorkspaceContent: React.FC = () => {
       return <ImpactGraphView />;
     case 'history':
       return <GitHistoryView />;
-    case 'chat':
-      return <RepoChatView />;
     case 'copilot':
+    case 'chat':
       return <RepoCopilotView />;
     default:
       return <RepoOverview />;

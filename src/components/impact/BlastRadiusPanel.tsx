@@ -1,38 +1,48 @@
 import React from 'react';
-import { BlastRadiusResult } from '../../types/impact';
+import { BlastRadiusResult, GraphNodeData } from '../../types/impact';
 import { useRepoStore } from '../../store/useRepoStore';
+import { calculateBlastRadius } from '../../services/impactGraphBuilder';
+import { Node, Edge } from '@xyflow/react';
 import {
   ShieldAlert,
-  AlertTriangle,
   FileCode,
   Server,
-  Database,
-  CheckCircle2,
   Terminal,
   Sparkles,
   ArrowRight,
+  Database,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface BlastRadiusPanelProps {
   selectedNodeId: string | null;
+  nodes?: Node<GraphNodeData>[];
+  edges?: Edge[];
 }
 
-export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNodeId }) => {
-  const { selectFileByPath, sendChatMessage } = useRepoStore();
+export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
+  selectedNodeId,
+  nodes = [],
+  edges = [],
+}) => {
+  const { selectFileByPath, sendChatMessage, repo } = useRepoStore();
 
-  // Create empty radius result if no data
-  const activeRadius: BlastRadiusResult = {
-    targetNodeId: selectedNodeId || 'unknown',
-    targetLabel: selectedNodeId || 'No node selected',
-    overallRiskCategory: 'LOW',
-    riskScore: 0,
-    affectedComponents: [],
-    affectedFiles: [],
-    affectedRoutes: [],
-    breakingChangeRisks: [],
-    impactSummary: 'No node selected. Click on any node in the graph to see its blast radius analysis.',
-    suggestedValidationSteps: ['Select a node to view validation steps'],
-  };
+  // Compute real dynamic blast radius from graph topology
+  const activeRadius: BlastRadiusResult = selectedNodeId
+    ? calculateBlastRadius(selectedNodeId, nodes, edges, repo)
+    : {
+        targetNodeId: 'unknown',
+        targetLabel: 'No node selected',
+        overallRiskCategory: 'LOW',
+        riskScore: 0,
+        affectedComponents: [],
+        affectedFiles: [],
+        affectedRoutes: [],
+        affectedDbTables: [],
+        affectedTests: [],
+        impactSummary: 'Click on any node in the topology graph to inspect its real upstream dependencies, downstream callers, and calculated blast radius.',
+        suggestedValidationSteps: ['Select a module or file to inspect.'],
+      };
 
   const getRiskBadge = (category: string) => {
     switch (category) {
@@ -43,7 +53,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
       case 'MEDIUM':
         return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       default:
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     }
   };
 
@@ -60,7 +70,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
           </span>
         </div>
 
-        <h3 className="text-sm font-bold text-white font-mono leading-snug">
+        <h3 className="text-sm font-bold text-white font-mono leading-snug truncate">
           {activeRadius.targetLabel}
         </h3>
 
@@ -72,7 +82,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
           </div>
           <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full"
+              className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 rounded-full transition-all duration-300"
               style={{ width: `${activeRadius.riskScore}%` }}
             />
           </div>
@@ -90,40 +100,44 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
       </div>
 
       {/* Affected Files List */}
-      <div className="space-y-2">
-        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
-          <FileCode className="w-3.5 h-3.5 text-indigo-400" /> Directly Impacted Files ({activeRadius.affectedFiles.length})
-        </span>
-        <div className="space-y-1">
-          {activeRadius.affectedFiles.map((file, idx) => (
-            <button
-              key={idx}
-              onClick={() => selectFileByPath(file)}
-              className="w-full text-left p-2 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-slate-200 font-mono text-[11px] flex items-center justify-between group transition-all"
-            >
-              <span className="truncate text-indigo-300 font-medium">{file}</span>
-              <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
-            </button>
-          ))}
+      {activeRadius.affectedFiles.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
+            <FileCode className="w-3.5 h-3.5 text-indigo-400" /> Directly Impacted Files ({activeRadius.affectedFiles.length})
+          </span>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {activeRadius.affectedFiles.map((file, idx) => (
+              <button
+                key={idx}
+                onClick={() => selectFileByPath(file)}
+                className="w-full text-left p-2 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-slate-200 font-mono text-[11px] flex items-center justify-between group transition-all"
+              >
+                <span className="truncate text-indigo-300 font-medium">{file}</span>
+                <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Affected Routes & Components */}
-      <div className="space-y-2">
-        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
-          <Server className="w-3.5 h-3.5 text-cyan-400" /> Downstream Routes & UI Elements
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {activeRadius.affectedRoutes.concat(activeRadius.affectedComponents).map((item, idx) => (
-            <span
-              key={idx}
-              className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-200 border border-slate-800 text-[10px] font-mono"
-            >
-              {item}
-            </span>
-          ))}
+      {activeRadius.affectedRoutes.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
+            <Server className="w-3.5 h-3.5 text-cyan-400" /> Downstream API Routes ({activeRadius.affectedRoutes.length})
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {activeRadius.affectedRoutes.map((item, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-200 border border-slate-800 text-[10px] font-mono"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Suggested Validation Steps */}
       <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
@@ -141,13 +155,15 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
       </div>
 
       {/* Ask AI to generate Change Plan */}
-      <button
-        onClick={() => sendChatMessage(`What are the step-by-step changes needed if I modify ${activeRadius.targetLabel}?`)}
-        className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all"
-      >
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>Generate Safe Change Plan</span>
-      </button>
+      {selectedNodeId && (
+        <button
+          onClick={() => sendChatMessage(`What are the step-by-step changes and risks if I modify ${activeRadius.targetLabel}?`)}
+          className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all font-mono"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Ask AI Change Impact</span>
+        </button>
+      )}
     </div>
   );
 };

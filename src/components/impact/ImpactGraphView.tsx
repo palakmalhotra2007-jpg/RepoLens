@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -22,14 +22,13 @@ import {
 import { BlastRadiusPanel } from './BlastRadiusPanel';
 import { ChangeAssistant } from './ChangeAssistant';
 import { useRepoStore } from '../../store/useRepoStore';
-import { initialImpactNodes, initialImpactEdges } from '../../data/mockImpactGraph';
+import { buildDynamicImpactGraph } from '../../services/impactGraphBuilder';
 import {
   Network,
   Sparkles,
   Layers,
   ZoomIn,
   RefreshCw,
-  SlidersHorizontal,
 } from 'lucide-react';
 
 const nodeTypes = {
@@ -43,23 +42,29 @@ const nodeTypes = {
 
 export const ImpactGraphView: React.FC = () => {
   const { selectedImpactNodeId, setSelectedImpactNodeId, repo } = useRepoStore();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialImpactNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialImpactEdges);
   const [viewMode, setViewMode] = useState<'graph' | 'assistant'>('graph');
 
-  // Load graph data when component mounts or repo changes
+  // Dynamically build real graph nodes & edges from current repository files
+  const { initialNodes, initialEdges } = useMemo(() => {
+    const graphData = buildDynamicImpactGraph(repo);
+    return {
+      initialNodes: graphData.nodes,
+      initialEdges: graphData.edges,
+    };
+  }, [repo]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Sync graph state when repository changes
   useEffect(() => {
-    // For now, use mock data for all repositories
-    // TODO: Generate real dependency graph from actual repository analysis
-    if (repo.isDemo) {
-      setNodes(initialImpactNodes);
-      setEdges(initialImpactEdges);
-    } else {
-      // For real repositories, show empty state or generate from code
-      setNodes(initialImpactNodes); // Using mock for now
-      setEdges(initialImpactEdges);
+    const graphData = buildDynamicImpactGraph(repo);
+    setNodes(graphData.nodes);
+    setEdges(graphData.edges);
+    if (graphData.nodes.length > 0 && !selectedImpactNodeId) {
+      setSelectedImpactNodeId(graphData.nodes[0].id);
     }
-  }, [repo.id, setNodes, setEdges]);
+  }, [repo, setNodes, setEdges, setSelectedImpactNodeId]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -80,7 +85,7 @@ export const ImpactGraphView: React.FC = () => {
             </span>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-            Database ➔ Service ➔ API ➔ Frontend ➔ Test
+            {nodes.length} Modules • {edges.length} Dependencies ({repo.name})
           </span>
         </div>
 
@@ -140,7 +145,11 @@ export const ImpactGraphView: React.FC = () => {
           </div>
 
           {/* Blast Radius Side Inspector */}
-          <BlastRadiusPanel selectedNodeId={selectedImpactNodeId} />
+          <BlastRadiusPanel
+            selectedNodeId={selectedImpactNodeId}
+            nodes={nodes}
+            edges={edges}
+          />
         </div>
       ) : (
         <ChangeAssistant />
