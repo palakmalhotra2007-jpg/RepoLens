@@ -14,7 +14,7 @@ export const RightPanel: React.FC = () => {
   if (!isRightPanelOpen || activeView !== 'impact') return null;
 
   return (
-    <aside className="w-84 lg:w-96 bg-[#0c101c] border-l border-slate-800/80 flex flex-col justify-between flex-shrink-0 z-20 h-full">
+    <aside className="w-80 lg:w-96 bg-bg-surface border-l border-border-default flex flex-col justify-between flex-shrink-0 z-20 h-full">
       {/* Header */}
       <div className="border-b border-slate-800 bg-slate-950/40">
         <div className="flex items-center justify-between px-3 py-2">
