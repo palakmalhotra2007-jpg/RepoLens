@@ -44,9 +44,9 @@ export const TopNav: React.FC = () => {
     : 0;
 
   return (
-    <header className="h-12 bg-[#161b22] border-b border-[#30363d] px-4 flex items-center justify-between z-30 select-none text-xs">
+    <header className="h-10 bg-[#161b22] border-b border-[#30363d] px-4 flex items-center gap-3 z-30 select-none text-xs">
       {/* Left: Brand + Repo Switcher + Branch Switcher */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-shrink-0">
         <div
           onClick={() => setActiveView('overview')}
           className="flex items-center gap-2 cursor-pointer group"
@@ -130,26 +130,26 @@ export const TopNav: React.FC = () => {
         )}
       </div>
 
-      {/* Middle: Universal Search / Cmd+K Launcher */}
-      <div className="flex-1 max-w-2xl mx-6 hidden md:block">
+      {/* Middle: Universal Search / Cmd+K Launcher - Full Width */}
+      <div className="flex-1 min-w-0 hidden md:block">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] text-slate-400 text-sm transition-all group"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] text-slate-400 text-xs transition-all group"
         >
-          <div className="flex items-center gap-2.5">
-            <Search className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 flex-shrink-0" />
             <span className="text-slate-400 group-hover:text-slate-200 truncate">
               Search files, symbols, routes, or ask AI...
             </span>
           </div>
-          <kbd className="px-2 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[10px] font-mono text-slate-400">
+          <kbd className="px-1.5 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[10px] font-mono text-slate-400 flex-shrink-0 ml-2">
             ⌘K
           </kbd>
         </button>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {/* Merge Conflict Alert Badge - ONLY when comparison has conflicts */}
         {conflictsCount > 0 && (
           <button

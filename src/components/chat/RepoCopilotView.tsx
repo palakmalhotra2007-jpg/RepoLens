@@ -222,35 +222,33 @@ export const RepoCopilotView: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0d1117] overflow-hidden select-none w-full">
-      {/* Top Header: Unified Copilot Bar */}
-      <div className="h-14 bg-[#161b22] border-b border-[#30363d] px-6 flex items-center justify-between flex-shrink-0 w-full">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 flex-shrink-0">
-            <Sparkles className="w-4 h-4" />
+      {/* Top Header: Unified Copilot Bar - Thin Lambda Design */}
+      <div className="h-10 bg-gradient-to-r from-[#0a0e14] via-[#0d1117] to-[#0a0e14] border-b border-[#21262d]/50 px-4 flex items-center justify-between flex-shrink-0 w-full backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 flex-shrink-0">
+            <Sparkles className="w-3 h-3" strokeWidth={2} />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-white text-sm truncate">
-                RepoLens Copilot
-              </span>
-            </div>
-            <div className="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1.5">
-              <span className="text-slate-300">{repo.name}</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-slate-400">{repo.currentBranch}</span>
+          <div className="min-w-0 flex items-center gap-3">
+            <span className="font-semibold text-white text-xs truncate tracking-tight">
+              RepoLens Copilot
+            </span>
+            <div className="text-[10px] font-mono text-slate-500 truncate flex items-center gap-1.5">
+              <span className="text-slate-400">{repo.name}</span>
+              <span className="text-slate-700">•</span>
+              <span className="text-slate-500">{repo.currentBranch}</span>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons: LLM & Voice Settings */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons: LLM Settings - Minimal */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsLLMSettingsModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-[#0d1117] hover:bg-[#21262d] text-slate-300 hover:text-white text-xs flex items-center gap-1.5 font-mono border border-[#30363d] hover:border-indigo-500/40 transition-colors"
+            className="px-2.5 py-1 rounded-md bg-[#161b22] hover:bg-[#1c2128] text-slate-400 hover:text-white text-[10px] flex items-center gap-1.5 font-medium border border-[#30363d] hover:border-indigo-500/50 transition-all duration-200"
             title="Configure Ollama / Gemini LLM Provider"
           >
-            <Bot className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">AI Settings</span>
+            <Bot className="w-3 h-3" strokeWidth={1.5} />
+            <span className="hidden sm:inline">AI</span>
           </button>
         </div>
       </div>
