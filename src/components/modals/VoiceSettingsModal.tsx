@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
 import { reviewAgents } from '../../config/agents';
 import { AgentId } from '../../types/agents';
+import { Button } from '../../frontend';
 import {
   X,
   Volume2,
@@ -32,17 +33,15 @@ export const VoiceSettingsModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-150">
-      <div className="w-full max-w-xl bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 select-none">
+      <div className="w-full max-w-xl bg-bg-surface border border-border-default rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-[#30363d] flex items-center justify-between bg-[#0d1117]">
+        <div className="p-4 border-b border-border-default flex items-center justify-between bg-bg-surface">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-              <Volume2 className="w-4 h-4" />
-            </div>
+            <Volume2 strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
             <div>
-              <h3 className="font-semibold text-xs text-white">5-Agent Voice & Audio Engine</h3>
-              <p className="text-[11px] text-slate-400">
+              <h3 className="font-semibold text-xs text-text-primary">5-Agent Voice & Audio Engine</h3>
+              <p className="text-[11px] text-text-secondary">
                 Configure voice playback, pitch, rate, and speech synthesis.
               </p>
             </div>
@@ -53,9 +52,9 @@ export const VoiceSettingsModal: React.FC = () => {
               stopAudioPlayback();
               setIsVoiceSettingsModalOpen(false);
             }}
-            className="p-1 rounded hover:bg-[#21262d] text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded-[6px] hover:bg-bg-surface-2 text-text-secondary hover:text-text-primary transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X strokeWidth={1.5} className="w-4 h-4" />
           </button>
         </div>
 
@@ -63,10 +62,10 @@ export const VoiceSettingsModal: React.FC = () => {
         <div className="p-5 space-y-4 text-xs">
           {/* Master Toggles */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] flex items-center justify-between">
+            <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-between">
               <div>
-                <div className="font-medium text-slate-200">Enable Agent Voice</div>
-                <div className="text-[10px] text-slate-400">Speech synthesis for briefings & debate</div>
+                <div className="font-medium text-text-primary">Enable Agent Voice</div>
+                <div className="text-[10px] text-text-secondary">Speech synthesis for briefings & debate</div>
               </div>
               <input
                 type="checkbox"
@@ -74,14 +73,14 @@ export const VoiceSettingsModal: React.FC = () => {
                 onChange={(e) =>
                   setVoiceSettings({ ...voiceSettings, enabled: e.target.checked })
                 }
-                className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                className="w-4 h-4 accent-[#4FA3D9] rounded cursor-pointer"
               />
             </div>
 
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] flex items-center justify-between">
+            <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-between">
               <div>
-                <div className="font-medium text-slate-200">Auto-Speak Responses</div>
-                <div className="text-[10px] text-slate-400">Automatically speak chat answers</div>
+                <div className="font-medium text-text-primary">Auto-Speak Responses</div>
+                <div className="text-[10px] text-text-secondary">Automatically speak chat answers</div>
               </div>
               <input
                 type="checkbox"
@@ -92,14 +91,14 @@ export const VoiceSettingsModal: React.FC = () => {
                     autoPlayResponses: e.target.checked,
                   })
                 }
-                className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                className="w-4 h-4 accent-[#4FA3D9] rounded cursor-pointer"
               />
             </div>
           </div>
 
           {/* 5-Agent Voice Selector Grid */}
           <div>
-            <label className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-2">
+            <label className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] block mb-2">
               Select Agent Persona to Preview
             </label>
             <div className="grid grid-cols-5 gap-1.5 font-mono">
@@ -109,13 +108,12 @@ export const VoiceSettingsModal: React.FC = () => {
                   <button
                     key={a.id}
                     onClick={() => setSelectedAgentId(a.id)}
-                    className={`p-2 rounded-lg border text-center transition-all flex flex-col items-center gap-1 ${
+                    className={`p-2.5 rounded-[4px] border text-center transition-colors flex flex-col items-center gap-1 ${
                       isSelected
-                        ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 font-semibold'
-                        : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200'
+                        ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
+                        : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    <span className="text-base">{a.avatar}</span>
                     <span className="text-[10px] truncate w-full">{a.shortName}</span>
                   </button>
                 );
@@ -124,30 +122,32 @@ export const VoiceSettingsModal: React.FC = () => {
           </div>
 
           {/* Global Voice Speed & Pitch Tuners */}
-          <div className="p-3.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-3">
+          <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-semibold text-slate-200 text-xs">
+                <span className="font-semibold text-text-primary text-xs">
                   {reviewAgents.find((a) => a.id === selectedAgentId)?.name}
                 </span>
-                <p className="text-[11px] text-slate-400 font-mono">
+                <p className="text-[11px] text-text-secondary font-mono">
                   {reviewAgents.find((a) => a.id === selectedAgentId)?.voicePersona.tone}
                 </p>
               </div>
-              <button
+              <Button
+                size="sm"
+                variant="primary"
                 onClick={() => handleTestAgentVoice(selectedAgentId)}
-                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] flex items-center gap-1 transition-all"
+                className="gap-1"
               >
-                <Play className="w-3 h-3 fill-current" />
+                <Play strokeWidth={1.5} className="w-3 h-3 fill-current" />
                 <span>{testingAgent === selectedAgentId ? 'Speaking...' : 'Test Voice'}</span>
-              </button>
+              </Button>
             </div>
 
             {/* Volume Slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-slate-400">Voice Volume</span>
-                <span className="text-indigo-400">{Math.round(voiceSettings.volume * 100)}%</span>
+                <span className="text-text-secondary">Voice Volume</span>
+                <span className="text-accent">{Math.round(voiceSettings.volume * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -156,15 +156,15 @@ export const VoiceSettingsModal: React.FC = () => {
                 step="0.05"
                 value={voiceSettings.volume}
                 onChange={(e) => setVoiceSettings({ ...voiceSettings, volume: parseFloat(e.target.value) })}
-                className="w-full accent-indigo-500 cursor-pointer"
+                className="w-full accent-[#4FA3D9] cursor-pointer"
               />
             </div>
 
             {/* Pitch Slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-slate-400">Voice Pitch</span>
-                <span className="text-indigo-400">{voiceSettings.pitch.toFixed(2)}x</span>
+                <span className="text-text-secondary">Voice Pitch</span>
+                <span className="text-accent">{voiceSettings.pitch.toFixed(2)}x</span>
               </div>
               <input
                 type="range"
@@ -173,15 +173,15 @@ export const VoiceSettingsModal: React.FC = () => {
                 step="0.05"
                 value={voiceSettings.pitch}
                 onChange={(e) => setVoiceSettings({ ...voiceSettings, pitch: parseFloat(e.target.value) })}
-                className="w-full accent-indigo-500 cursor-pointer"
+                className="w-full accent-[#4FA3D9] cursor-pointer"
               />
             </div>
 
             {/* Rate / Speed Slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-[11px] font-mono">
-                <span className="text-slate-400">Speech Rate (Speed)</span>
-                <span className="text-indigo-400">{voiceSettings.rate.toFixed(2)}x</span>
+                <span className="text-text-secondary">Speech Rate (Speed)</span>
+                <span className="text-accent">{voiceSettings.rate.toFixed(2)}x</span>
               </div>
               <input
                 type="range"
@@ -190,35 +190,24 @@ export const VoiceSettingsModal: React.FC = () => {
                 step="0.05"
                 value={voiceSettings.rate}
                 onChange={(e) => setVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
-                className="w-full accent-indigo-500 cursor-pointer"
+                className="w-full accent-[#4FA3D9] cursor-pointer"
               />
-              <p className="text-[10px] text-slate-500 italic mt-1">
-                Tip: Lower rate (0.8-0.9) improves clarity for complex content
-              </p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 bg-[#0d1117] border-t border-[#30363d] space-y-2">
-          <div className="text-[10px] text-slate-500 font-mono space-y-1">
-            <div className="flex items-center justify-between">
-              <span>Provider: Web Speech Synthesis API</span>
-              <span className="text-indigo-400">High-Quality Voice Mode</span>
-            </div>
-            <p className="text-slate-600 italic">
-              Using browser's native speech engine with enhanced voice selection for improved clarity.
-            </p>
-          </div>
-          <button
+        <div className="p-4 bg-bg-surface border-t border-border-default">
+          <Button
+            variant="primary"
             onClick={() => {
               stopAudioPlayback();
               setIsVoiceSettingsModalOpen(false);
             }}
-            className="w-full px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors font-medium text-xs"
+            className="w-full"
           >
             Done
-          </button>
+          </Button>
         </div>
       </div>
     </div>

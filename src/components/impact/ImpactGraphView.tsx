@@ -23,12 +23,10 @@ import { BlastRadiusPanel } from './BlastRadiusPanel';
 import { ChangeAssistant } from './ChangeAssistant';
 import { useRepoStore } from '../../store/useRepoStore';
 import { buildDynamicImpactGraph } from '../../services/impactGraphBuilder';
+import { Button, Badge } from '../../frontend';
 import {
   Network,
   Sparkles,
-  Layers,
-  ZoomIn,
-  RefreshCw,
 } from 'lucide-react';
 
 const nodeTypes = {
@@ -74,46 +72,42 @@ export const ImpactGraphView: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#090d16] overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-bg-base overflow-hidden">
       {/* Top Header Controls Bar */}
-      <div className="h-12 bg-slate-900/90 border-b border-slate-800/80 px-4 flex items-center justify-between select-none z-10">
+      <div className="h-12 bg-bg-surface border-b border-border-default px-4 flex items-center justify-between select-none z-10">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Network className="w-4 h-4 text-indigo-400" />
-            <span className="font-semibold text-xs text-white">
+            <Network strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
+            <span className="font-semibold text-xs text-text-primary">
               Repository Dependency & Blast Radius Topology
             </span>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+          <Badge variant="neutral" className="text-[10px] font-mono">
             {nodes.length} Modules • {edges.length} Dependencies ({repo.name})
-          </span>
+          </Badge>
         </div>
 
         {/* View Mode Switcher */}
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            size="sm"
+            variant="primary"
             onClick={() => setViewMode('graph')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'graph'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
+            className={`gap-1.5 ${viewMode === 'graph' ? 'border-accent text-text-primary' : ''}`}
           >
-            <Network className="w-3.5 h-3.5" />
+            <Network strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
             <span>Interactive Graph</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
+            size="sm"
+            variant="primary"
             onClick={() => setViewMode('assistant')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'assistant'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
+            className={`gap-1.5 ${viewMode === 'assistant' ? 'border-accent text-text-primary' : ''}`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+            <Sparkles strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
             <span>AI Change Assistant</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -134,12 +128,11 @@ export const ImpactGraphView: React.FC = () => {
               fitView
               attributionPosition="bottom-left"
             >
-              <Background color="rgba(255, 255, 255, 0.05)" gap={20} size={1} variant={BackgroundVariant.Dots} />
-              <Controls className="!bg-slate-900 !border-slate-800" />
+              <Background color="#262B31" gap={20} size={1} variant={BackgroundVariant.Dots} />
+              <Controls />
               <MiniMap
-                nodeStrokeColor="#6366f1"
-                nodeColor="#1e293b"
-                className="!bg-slate-950 !border-slate-800"
+                nodeStrokeColor="#383F47"
+                nodeColor="#1B1F24"
               />
             </ReactFlow>
           </div>

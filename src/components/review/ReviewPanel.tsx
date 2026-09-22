@@ -4,7 +4,16 @@ import { reviewAgents } from '../../config/agents';
 import { FindingCard } from './FindingCard';
 import { IssueDrawer } from './IssueDrawer';
 import { SeverityBadge } from '../common/Badge';
-import { AgentId, SeverityLevel, ReviewFinding } from '../../types/agents';
+import { ReviewFinding } from '../../types/agents';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  Button,
+  Badge,
+  TabsList,
+  TabsTrigger,
+} from '../../frontend';
 import {
   ShieldAlert,
   Bot,
@@ -13,16 +22,11 @@ import {
   Play,
   Square,
   RefreshCw,
-  Sparkles,
   Volume2,
   Users2,
-  Layers,
   FileCode,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  Cpu,
-  HelpCircle,
 } from 'lucide-react';
 
 export const ReviewPanel: React.FC = () => {
@@ -47,7 +51,6 @@ export const ReviewPanel: React.FC = () => {
     isReviewRunning,
     reviewProgress,
     speakAgentBriefing,
-    applyFix,
     selectFileByPath,
   } = useRepoStore();
 
@@ -57,96 +60,98 @@ export const ReviewPanel: React.FC = () => {
   // 1. NOT STARTED STATE
   if (reviewState === 'not_started') {
     return (
-      <div className="flex-1 overflow-y-auto p-6 text-slate-100 w-full text-xs space-y-6 select-none">
+      <div className="flex-1 overflow-y-auto p-8 text-text-primary w-full text-xs space-y-8 select-none bg-bg-base">
         {/* Hero Header */}
-        <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4 text-center">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono text-[11px]">
-            <Bot className="w-3.5 h-3.5" />
-            <span>Multi-Agent Code Review & Debate Ensemble</span>
+        <Card className="p-8 space-y-4 text-center">
+          <div className="inline-flex">
+            <Badge variant="neutral">
+              Multi-Agent Code Review & Debate Ensemble
+            </Badge>
           </div>
 
-          <div className="space-y-1.5 max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold text-white tracking-tight">
+          <div className="space-y-2 max-w-2xl mx-auto">
+            <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
               Autonomous 5-Agent Engineering Review
             </h2>
-            <p className="text-slate-200 text-xs leading-relaxed">
+            <p className="text-[13px] text-text-secondary leading-relaxed font-normal">
               Review is currently not started. Click below to dispatch 5 specialized autonomous agents to perform independent static analysis, inter-agent cross-challenges, live debate, and orchestrator consensus.
             </p>
           </div>
 
           <div className="pt-2">
-            <button
+            {/* The single Accent-variant button on the page */}
+            <Button
+              variant="accent"
+              size="lg"
               onClick={runReview}
-              className="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 inline-flex items-center gap-2 transition-all font-mono"
+              className="gap-2 px-6"
             >
-              <Play className="w-4 h-4 fill-current" />
+              <Play strokeWidth={1.5} className="w-4 h-4 fill-current" />
               <span>Run 5-Agent Review</span>
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* 5 Specialized Agent Domain Scopes */}
-        <div className="space-y-2.5">
-          <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider">
-            5 Specialized Autonomous Agents & Analysis Domains
+        <div className="space-y-4">
+          <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
+            5 Specialized Autonomous Agents & Domain Scopes
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 font-mono">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {reviewAgents.map((agent, idx) => (
-              <div
+              <Card
                 key={agent.id}
-                className="p-3.5 rounded-lg bg-[#161b22] border border-[#30363d] space-y-2 flex flex-col justify-between"
+                className="p-5 flex flex-col justify-between space-y-4"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-2xl">{agent.avatar}</span>
-                    <span className="text-[10px] text-slate-300 font-mono">Agent #{idx + 1}</span>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary mb-1">
+                    AGENT #{idx + 1}
                   </div>
-                  <h3 className="font-bold text-xs text-white leading-snug">{agent.name}</h3>
-                  <p className="text-[11px] text-slate-200 font-sans mt-1 leading-relaxed">
+                  <h3 className="text-[15px] font-semibold text-text-primary">{agent.name}</h3>
+                  <p className="text-[13px] text-text-secondary mt-1.5 leading-relaxed font-normal">
                     {agent.description}
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-[#30363d]/60 space-y-1">
-                  <span className="text-[10px] text-indigo-400 uppercase font-bold block">
-                    Domain Focus Areas:
+                <div className="pt-3 border-t border-border-default space-y-2">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary block">
+                    DOMAIN FOCUS AREAS
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {agent.focusAreas.map((fa, fIdx) => (
                       <span
                         key={fIdx}
-                        className="px-1.5 py-0.2 rounded bg-[#0d1117] text-slate-300 text-[10px] border border-[#30363d]"
+                        className="px-2 py-0.5 rounded-[4px] bg-bg-surface-2 text-text-secondary text-[11px] border border-border-default"
                       >
                         {fa}
                       </span>
                     ))}
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
 
             {/* Pipeline Stage Card */}
-            <div className="p-3.5 rounded-lg bg-[#161b22] border border-indigo-500/30 space-y-2 flex flex-col justify-between">
+            <Card className="p-5 flex flex-col justify-between space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-2xl">⚖️</span>
-                  <span className="text-[10px] text-indigo-400 font-mono font-bold">Consensus Pipeline</span>
+                <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary mb-1">
+                  CONSENSUS PIPELINE
                 </div>
-                <h3 className="font-bold text-xs text-white leading-snug">Cross-Agent Debate Protocol</h3>
-                <p className="text-[11px] text-slate-200 font-sans mt-1 leading-relaxed">
+                <h3 className="text-[15px] font-semibold text-text-primary">Cross-Agent Debate Protocol</h3>
+                <p className="text-[13px] text-text-secondary mt-1.5 leading-relaxed font-normal">
                   Agents challenge findings to eliminate false positives and synthesize verified fix diffs.
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-[#30363d]/60 text-[10px] font-mono text-slate-300 space-y-1">
+              <div className="pt-3 border-t border-border-default text-xs font-mono text-text-secondary space-y-1.5">
                 <div>1. Independent Analysis</div>
                 <div>2. Cross-Agent Challenge</div>
                 <div>3. Debate & Rebuttal</div>
                 <div>4. Evidence Verification</div>
                 <div>5. Consensus Ruling</div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
@@ -156,55 +161,54 @@ export const ReviewPanel: React.FC = () => {
   // 2. RUNNING / DEBATING / CONSENSUS STATE (Live Progress)
   if (reviewState === 'running' || reviewState === 'debating' || reviewState === 'consensus') {
     return (
-      <div className="flex-1 overflow-y-auto p-6 text-slate-100 w-full text-xs space-y-6 flex flex-col justify-center items-center select-none min-h-[500px]">
-        <div className="w-full max-w-4xl p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-5 text-center shadow-xl">
-          <div className="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500 flex items-center justify-center mx-auto text-indigo-400 animate-pulse">
-            <RefreshCw className="w-6 h-6 animate-spin" />
+      <div className="flex-1 overflow-y-auto p-8 text-text-primary w-full text-xs space-y-8 flex flex-col justify-center items-center select-none min-h-[500px] bg-bg-base">
+        <Card className="w-full max-w-3xl p-8 space-y-6 text-center">
+          <div className="w-10 h-10 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-center mx-auto text-accent">
+            <RefreshCw strokeWidth={1.5} className="w-5 h-5 animate-spin" />
           </div>
 
-          <div className="space-y-1.5">
-            <div className="text-[11px] font-mono uppercase text-indigo-400 tracking-wider font-bold">
+          <div className="space-y-1">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               {reviewState === 'running' && 'Phase 1: Autonomous Domain Scanning'}
               {reviewState === 'debating' && 'Phase 2: Inter-Agent Cross-Debate & Challenge'}
               {reviewState === 'consensus' && 'Phase 3: Central Orchestrator Consensus Synthesis'}
             </div>
-            <h2 className="text-lg font-bold text-white">5-Agent Ensemble Review in Progress</h2>
-            <p className="text-slate-200 text-xs font-mono">{reviewProgress.label}</p>
+            <h2 className="text-[20px] font-semibold text-text-primary">5-Agent Ensemble Review in Progress</h2>
+            <p className="text-xs text-text-secondary font-mono">{reviewProgress.label}</p>
           </div>
 
-          {/* Progress Bar */}
+          {/* Progress Bar (Flat color, no gradients) */}
           <div className="space-y-1.5 max-w-md mx-auto font-mono">
-            <div className="flex justify-between text-[11px] text-slate-200">
+            <div className="flex justify-between text-xs text-text-secondary">
               <span>Overall Progress</span>
-              <span className="text-indigo-400 font-bold">{reviewProgress.percent}%</span>
+              <span className="text-text-primary font-medium">{reviewProgress.percent}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-[#0d1117] border border-[#30363d] overflow-hidden">
+            <div className="w-full h-2 rounded-[4px] bg-bg-surface-2 border border-border-default overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 rounded-full"
+                className="h-full bg-accent transition-all duration-300"
                 style={{ width: `${reviewProgress.percent}%` }}
               />
             </div>
           </div>
 
           {/* Active Agents Indicator */}
-          <div className="grid grid-cols-5 gap-2 max-w-lg mx-auto pt-2 font-mono text-[10px]">
+          <div className="grid grid-cols-5 gap-2 max-w-lg mx-auto pt-2 font-mono text-[11px]">
             {reviewAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="p-2 rounded bg-[#0d1117] border border-[#30363d] flex flex-col items-center gap-1"
+                className="p-2.5 rounded-[4px] bg-bg-surface-2 border border-border-default flex flex-col items-center gap-1"
               >
-                <span className="text-base">{agent.avatar}</span>
-                <span className="truncate text-slate-300">{agent.shortName}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                <span className="truncate text-text-primary">{agent.shortName}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
-  // 3. COMPLETED STATE (Full Review Dashboard, Findings & Debate)
+  // 3. COMPLETED STATE (Full Review Dashboard)
   const filteredFindings = reviewFindings.filter((finding) => {
     if (agentFilter !== 'all' && finding.primaryAgent !== agentFilter && !finding.agentsInvolved.includes(agentFilter)) {
       return false;
@@ -217,162 +221,131 @@ export const ReviewPanel: React.FC = () => {
 
   const resolvedCount = reviewFindings.filter((f) => f.status === 'resolved').length;
   const currentDebateFinding = activeDebateFinding || reviewFindings[0];
-  const primaryDebateAgent = reviewAgents.find((a) => a.id === currentDebateFinding?.primaryAgent);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 w-full text-xs select-none">
+    <div className="flex-1 overflow-y-auto p-8 space-y-8 text-text-primary w-full text-xs select-none bg-bg-base">
       {/* Top Banner: Orchestrator Verdict & Re-run Trigger */}
-      <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-1">
+      <Card className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5" /> 5-Agent Central Review Orchestrator
-            </span>
-            <span className="text-[11px] text-slate-400 font-mono">
-              Status: <span className="text-amber-400 font-bold uppercase">{orchestrationSummary.readinessVerdict.replace(/_/g, ' ')}</span>
-            </span>
+            <Badge variant="neutral">
+              5-Agent Central Review Orchestrator
+            </Badge>
+            <Badge variant="warn">
+              {orchestrationSummary.readinessVerdict.replace(/_/g, ' ')}
+            </Badge>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">
+          <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
             Multi-Agent Engineering Code Review & Live Debate
           </h2>
-          <p className="text-slate-300 text-xs leading-relaxed">
+          <p className="text-[13px] text-text-secondary leading-relaxed font-normal max-w-3xl">
             {orchestrationSummary.finalReviewerNotes}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Audio Orchestrator Summary */}
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => speakAgentBriefing(orchestrationSummary.orchestratorAudioSummary, 'orchestrator')}
-            className="px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors font-mono"
             title="Listen to verbal executive summary"
           >
-            <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+            <Volume2 strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
             <span>Audio Summary</span>
-          </button>
+          </Button>
 
-          <button
+          {/* The single Accent button on screen */}
+          <Button
+            variant="accent"
+            size="sm"
             onClick={runReview}
             disabled={isReviewRunning}
-            className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm disabled:opacity-50 transition-all flex items-center gap-1.5 font-mono"
           >
-            <Play className="w-3.5 h-3.5 fill-current" />
+            <Play strokeWidth={1.5} className="w-3.5 h-3.5 fill-current" />
             <span>Re-run Review</span>
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* 5 Specialized Autonomous Agents Status Grid */}
-      <div>
-        <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider mb-2">
+      <div className="space-y-3">
+        <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
           5 Specialized Review Agents & Domain Responsibilities
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-          {reviewAgents.map((agent) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {reviewAgents.map((agent, idx) => {
             const isSelected = agentFilter === agent.id;
             const agentIssuesCount = reviewFindings.filter(
               (f) => f.primaryAgent === agent.id && f.status === 'open'
             ).length;
 
             return (
-              <div
+              <Card
                 key={agent.id}
                 onClick={() => {
                   setAgentFilter(isSelected ? 'all' : agent.id);
                   setActiveTab('findings');
                 }}
-                className={`p-3 rounded-lg border cursor-pointer transition-all flex flex-col justify-between ${
-                  isSelected
-                    ? 'bg-indigo-600/15 border-indigo-500 shadow-md ring-1 ring-indigo-500/20'
-                    : 'bg-[#161b22] border-[#30363d] hover:border-slate-500'
+                className={`p-4 cursor-pointer transition-colors flex flex-col justify-between space-y-3 ${
+                  isSelected ? 'border-accent bg-bg-surface-2' : 'hover:bg-bg-surface-2'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-lg">{agent.avatar}</span>
-                    <span
-                      className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
-                        agentIssuesCount > 0
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      }`}
-                    >
-                      {agentIssuesCount} open
+                    <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
+                      AGENT #{idx + 1}
                     </span>
+                    <Badge variant={agentIssuesCount > 0 ? 'critical' : 'good'}>
+                      {agentIssuesCount} open
+                    </Badge>
                   </div>
-                  <h4 className="font-bold text-xs text-white leading-snug">{agent.name}</h4>
-                  <p className="text-[10px] text-slate-200 mt-0.5 line-clamp-2">{agent.role}</p>
+                  <h4 className="text-[14px] font-medium text-text-primary leading-snug">{agent.name}</h4>
+                  <p className="text-[11px] text-text-secondary mt-1 line-clamp-2 font-normal">{agent.role}</p>
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-[#30363d] flex items-center justify-between text-[10px] font-mono text-slate-300">
-                  <span className="flex items-center gap-1">
-                    <Volume2 className="w-2.5 h-2.5 text-indigo-400" /> Voice Ready
-                  </span>
+                <div className="pt-2 border-t border-border-default flex items-center justify-between text-[11px] font-mono text-text-tertiary">
                   <span>{isSelected ? '✓ Filter Active' : 'Filter'}</span>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       </div>
 
-      {/* Unified Sub-View Switcher Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#30363d] pb-2 font-mono text-xs">
-        <button
-          onClick={() => setActiveTab('findings')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-            activeTab === 'findings'
-              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-              : 'bg-[#161b22] text-slate-400 hover:text-slate-200 border border-[#30363d]'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Audit Findings & Fixes ({filteredFindings.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('debate')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-            activeTab === 'debate'
-              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-              : 'bg-[#161b22] text-slate-400 hover:text-slate-200 border border-[#30363d]'
-          }`}
-        >
-          <Users2 className="w-3.5 h-3.5 text-purple-400" />
-          <span>Live Debate Arena</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('orchestration')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-            activeTab === 'orchestration'
-              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-              : 'bg-[#161b22] text-slate-400 hover:text-slate-200 border border-[#30363d]'
-          }`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Orchestration Consensus Report</span>
-        </button>
+      {/* Sub-View Switcher Tabs (Underline Active Style, No Box Background) */}
+      <div>
+        <TabsList>
+          <TabsTrigger active={activeTab === 'findings'} onClick={() => setActiveTab('findings')}>
+            Audit Findings & Fixes ({filteredFindings.length})
+          </TabsTrigger>
+          <TabsTrigger active={activeTab === 'debate'} onClick={() => setActiveTab('debate')}>
+            Live Debate Arena
+          </TabsTrigger>
+          <TabsTrigger active={activeTab === 'orchestration'} onClick={() => setActiveTab('orchestration')}>
+            Orchestration Consensus Report
+          </TabsTrigger>
+        </TabsList>
       </div>
 
       {/* TAB 1: ALL FINDINGS & DIFF FIXES */}
       {activeTab === 'findings' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="p-2.5 rounded-lg bg-[#161b22] border border-[#30363d] flex flex-wrap items-center justify-between gap-3 font-mono text-[11px]">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-slate-200 uppercase mr-1 flex items-center gap-1">
-                <Filter className="w-3 h-3 text-indigo-400" /> Severity:
+          <div className="p-3 rounded-[6px] bg-bg-surface border border-border-default flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary flex items-center gap-1.5">
+                <Filter strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary" /> Severity:
               </span>
 
               {(['all', 'critical', 'high', 'medium', 'low'] as const).map((sev) => (
                 <button
                   key={sev}
                   onClick={() => setSeverityFilter(sev)}
-                  className={`px-2 py-0.5 rounded uppercase transition-all ${
+                  className={`px-2.5 py-1 rounded-[4px] uppercase font-mono text-[10px] transition-colors ${
                     severityFilter === sev
-                      ? 'bg-indigo-600 text-white font-bold'
-                      : 'bg-[#0d1117] text-slate-400 hover:text-slate-200'
+                      ? 'bg-bg-surface-2 border border-border-strong text-text-primary font-medium'
+                      : 'bg-transparent text-text-tertiary hover:text-text-secondary'
                   }`}
                 >
                   {sev}
@@ -380,42 +353,43 @@ export const ReviewPanel: React.FC = () => {
               ))}
 
               {agentFilter !== 'all' && (
-                <button
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setAgentFilter('all')}
-                  className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/30"
+                  className="text-status-critical"
                 >
                   Reset Agent ({agentFilter})
-                </button>
+                </Button>
               )}
             </div>
 
-            <div className="text-slate-200">
-              Showing <span className="text-white font-bold">{filteredFindings.length}</span> issues (
-              <span className="text-emerald-400">{resolvedCount} resolved</span>)
+            <div className="text-text-secondary text-xs">
+              Showing <span className="text-text-primary font-medium">{filteredFindings.length}</span> issues (
+              <span className="text-status-good">{resolvedCount} resolved</span>)
             </div>
           </div>
 
           {/* Findings List */}
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {filteredFindings.length > 0 ? (
               filteredFindings.map((finding) => (
-                <div key={finding.id} className="relative">
-                  <FindingCard
-                    finding={finding}
-                    isSelected={selectedFinding?.id === finding.id}
-                    onSelect={() => {
-                      setSelectedFinding(finding);
-                      setActiveDebateFinding(finding);
-                      setDrawerFinding(finding);
-                    }}
-                  />
-                </div>
+                <FindingCard
+                  key={finding.id}
+                  finding={finding}
+                  isSelected={selectedFinding?.id === finding.id}
+                  onSelect={() => {
+                    setSelectedFinding(finding);
+                    setActiveDebateFinding(finding);
+                    setDrawerFinding(finding);
+                  }}
+                />
               ))
             ) : (
-              <div className="p-8 text-center bg-[#161b22] rounded-xl border border-[#30363d] text-slate-200">
-                <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-                <h4 className="font-semibold text-white text-xs">All rules verified clean</h4>
-              </div>
+              <Card className="p-8 text-center text-text-secondary space-y-2">
+                <CheckCircle2 strokeWidth={1.5} className="w-8 h-8 mx-auto text-status-good mb-2" />
+                <h4 className="font-semibold text-text-primary text-xs">All rules verified clean</h4>
+              </Card>
             )}
           </div>
         </div>
@@ -423,25 +397,27 @@ export const ReviewPanel: React.FC = () => {
 
       {/* TAB 2: LIVE DEBATE ARENA */}
       {activeTab === 'debate' && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {currentDebateFinding ? (
             <>
               {/* Finding Selector & Debate Controls Header */}
-              <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
+              <Card className="p-5 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
-                        <Users2 className="w-3.5 h-3.5" /> Live Agent Debate Arena
-                      </span>
+                      <Badge variant="accent">
+                        Live Agent Debate Arena
+                      </Badge>
                       <SeverityBadge severity={currentDebateFinding.severity} />
                     </div>
-                    <h3 className="text-base font-bold text-white tracking-tight">{currentDebateFinding.title}</h3>
-                    <div className="flex items-center gap-2 text-xs font-mono text-indigo-400">
-                      <FileCode className="w-3.5 h-3.5" />
+                    <h3 className="text-[15px] font-semibold text-text-primary tracking-tight">
+                      {currentDebateFinding.title}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
+                      <FileCode strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary" />
                       <button
                         onClick={() => selectFileByPath(currentDebateFinding.file, currentDebateFinding.lineRange.start)}
-                        className="hover:underline text-indigo-300"
+                        className="hover:underline text-accent"
                       >
                         {currentDebateFinding.file}:{currentDebateFinding.lineRange.start}-{currentDebateFinding.lineRange.end}
                       </button>
@@ -450,39 +426,43 @@ export const ReviewPanel: React.FC = () => {
 
                   {/* Audio Controls & Skip to Report */}
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      size="sm"
+                      variant="primary"
                       onClick={() => setActiveTab('orchestration')}
-                      className="px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-all font-mono"
                       title="Skip debate and go to final report"
                     >
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" />
                       <span>Skip to Report</span>
-                    </button>
+                    </Button>
 
                     {voicePlayback.isPlaying ? (
-                      <button
+                      <Button
+                        size="sm"
+                        variant="primary"
                         onClick={stopAudioPlayback}
-                        className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
+                        className="text-status-critical"
                       >
-                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <Square strokeWidth={1.5} className="w-3.5 h-3.5 fill-current" />
                         <span>Stop Audio</span>
-                      </button>
+                      </Button>
                     ) : (
-                      <button
+                      <Button
+                        size="sm"
+                        variant="primary"
                         onClick={() => playMultiAgentDebate(currentDebateFinding)}
-                        className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all font-mono"
                       >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>▶️ Play Multi-Agent Audio</span>
-                      </button>
+                        <Play strokeWidth={1.5} className="w-3.5 h-3.5 fill-current text-text-secondary" />
+                        <span>Play Audio Debate</span>
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 {/* Finding Switcher (if multiple findings exist) */}
                 {reviewFindings.length > 1 && (
-                  <div className="pt-3 border-t border-[#30363d] flex flex-wrap items-center gap-2 font-mono text-[11px]">
-                    <span className="text-slate-400">Debate Topic:</span>
+                  <div className="pt-3 border-t border-border-default flex flex-wrap items-center gap-2 font-mono text-xs">
+                    <span className="text-text-tertiary text-[11px] uppercase tracking-[0.04em]">Topic:</span>
                     {reviewFindings.slice(0, 5).map((finding, idx) => (
                       <button
                         key={finding.id}
@@ -491,10 +471,10 @@ export const ReviewPanel: React.FC = () => {
                           setSelectedFinding(finding);
                           setActiveDebateStageIndex(0);
                         }}
-                        className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                        className={`px-2.5 py-1 rounded-[4px] transition-colors flex items-center gap-1.5 ${
                           currentDebateFinding.id === finding.id
-                            ? 'bg-purple-600 text-white font-bold shadow-sm'
-                            : 'bg-[#0d1117] text-slate-300 hover:text-white border border-[#30363d]'
+                            ? 'bg-bg-surface-2 border border-accent text-text-primary font-medium'
+                            : 'bg-bg-surface-2 border border-border-default text-text-secondary hover:text-text-primary'
                         }`}
                       >
                         <span>#{idx + 1}</span>
@@ -503,13 +483,13 @@ export const ReviewPanel: React.FC = () => {
                     ))}
                   </div>
                 )}
-              </div>
+              </Card>
 
               {/* 5-Stage Debate Pipeline Stepper */}
-              <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-2.5">
-                <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider flex items-center justify-between">
+              <Card className="p-4 space-y-3">
+                <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] flex items-center justify-between">
                   <span>5-Stage Cross-Agent Debate Protocol</span>
-                  <span className="text-indigo-400 font-bold">Stage {activeDebateStageIndex + 1} of 5</span>
+                  <Badge variant="accent">Stage {activeDebateStageIndex + 1} of 5</Badge>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs font-mono">
                   {[
@@ -525,126 +505,111 @@ export const ReviewPanel: React.FC = () => {
                       <div
                         key={step.num}
                         onClick={() => setActiveDebateStageIndex(idx)}
-                        className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                        className={`p-3 rounded-[6px] border cursor-pointer transition-colors ${
                           isCurrent
-                            ? 'bg-purple-600/20 border-purple-500 text-purple-200 font-bold ring-1 ring-purple-500/30'
+                            ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
                             : isCompleted
-                            ? 'bg-[#0d1117] border-emerald-500/40 text-emerald-300'
-                            : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200'
+                            ? 'bg-bg-surface-2 border-border-default text-status-good'
+                            : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] text-slate-300 font-bold">STAGE {step.num}</span>
+                          <span className="text-[10px] text-text-tertiary font-bold">STAGE {step.num}</span>
                           {isCompleted ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <CheckCircle2 strokeWidth={1.5} className="w-3.5 h-3.5 text-status-good" />
                           ) : isCurrent ? (
-                            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                           ) : null}
                         </div>
                         <div className="font-semibold truncate text-[11px]">{step.label}</div>
-                        <div className="text-[10px] text-slate-500 truncate mt-0.5">{step.desc}</div>
+                        <div className="text-[10px] text-text-tertiary truncate mt-0.5">{step.desc}</div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </Card>
 
               {/* Inter-Agent Agreement Voting Matrix */}
               {currentDebateFinding.agreementMatrix && currentDebateFinding.agreementMatrix.length > 0 && (
-                <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-3 font-mono">
-                  <div className="text-[11px] text-slate-200 uppercase tracking-wider flex items-center justify-between">
+                <Card className="p-4 space-y-3 font-mono">
+                  <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] flex items-center justify-between">
                     <span>5-Agent Consensus Voting Ledger</span>
-                    <span className="text-emerald-400 text-[10px] font-bold">
+                    <Badge variant="good">
                       {currentDebateFinding.agreementMatrix.filter((v) => v.vote === 'agree').length}/5 Agents Agreed
-                    </span>
+                    </Badge>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-[11px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
                     {currentDebateFinding.agreementMatrix.map((item) => (
                       <div
                         key={item.agentId}
-                        className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-1.5"
+                        className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-1.5"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-white truncate">{item.agentName.split(' ')[0]}</span>
-                          <span
-                            className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-bold ${
-                              item.vote === 'agree'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : item.vote === 'disagree'
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                            }`}
+                          <span className="font-medium text-text-primary truncate">{item.agentName.split(' ')[0]}</span>
+                          <Badge
+                            variant={item.vote === 'agree' ? 'good' : 'critical'}
+                            className="text-[10px]"
                           >
                             {item.vote}
-                          </span>
+                          </Badge>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-sans line-clamp-2">{item.reasonSummary}</p>
+                        <p className="text-[11px] text-text-secondary font-sans line-clamp-2">{item.reasonSummary}</p>
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
               )}
 
-              {/* Debate Arguments & Speech Bubbles */}
+              {/* Debate Arguments */}
               <div className="space-y-3">
-                <div className="text-[11px] font-mono text-slate-200 uppercase tracking-wider">
+                <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
                   Live Agent Arguments & Real-Time Discourse ({currentDebateFinding.debateStages?.length || 0} Stages)
                 </div>
 
                 {currentDebateFinding.debateStages?.map((stage, idx) => {
                   const agent = reviewAgents.find((a) => a.id === stage.agentId) || {
                     name: stage.agentName,
-                    avatar: '🤖',
-                    color: '#6366f1',
                     role: 'Specialized Agent',
                   };
                   const isSpeaking = voicePlayback.isPlaying && voicePlayback.speakingAgentId === stage.agentId;
 
                   return (
-                    <div
+                    <Card
                       key={idx}
-                      className={`p-4 rounded-xl border transition-all space-y-2.5 ${
-                        isSpeaking
-                          ? 'bg-purple-950/20 border-purple-500 shadow-xl shadow-purple-500/10 ring-1 ring-purple-500'
-                          : 'bg-[#161b22] border-[#30363d]'
+                      className={`p-4 space-y-2.5 ${
+                        isSpeaking ? 'border-accent bg-bg-surface-2' : ''
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xl">{agent.avatar}</span>
-                          <div>
-                            <div className="font-bold text-xs text-white flex items-center gap-2">
-                              <span>{stage.agentName}</span>
-                              <span
-                                className={`px-2 py-0.2 rounded text-[10px] font-mono uppercase font-semibold ${
-                                  stage.stance === 'flagged'
-                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                    : stage.stance === 'disagree_challenge'
-                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                    : stage.stance === 'verified'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                    : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                }`}
-                              >
-                                {stage.stageTitle}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                              {agent.role}
-                            </div>
+                        <div>
+                          <div className="font-medium text-xs text-text-primary flex items-center gap-2">
+                            <span>{stage.agentName}</span>
+                            <Badge
+                              variant={
+                                stage.stance === 'flagged' ? 'critical' :
+                                stage.stance === 'disagree_challenge' ? 'warn' :
+                                stage.stance === 'verified' ? 'good' : 'accent'
+                              }
+                              className="text-[10px]"
+                            >
+                              {stage.stageTitle}
+                            </Badge>
+                          </div>
+                          <div className="text-[11px] text-text-tertiary font-mono mt-0.5">
+                            {agent.role}
                           </div>
                         </div>
 
-                        <span className="text-[10px] font-mono text-slate-500">{stage.timestamp}</span>
+                        <span className="text-[10px] font-mono text-text-tertiary">{stage.timestamp}</span>
                       </div>
 
-                      <p className="text-xs text-slate-200 leading-relaxed pl-8">
+                      <p className="text-[13px] text-text-secondary leading-relaxed">
                         {stage.argumentText}
                       </p>
 
                       {stage.evidenceCode && (
-                        <div className="ml-8 p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-[11px] text-rose-300/90 overflow-x-auto">
-                          <div className="text-[10px] text-slate-500 uppercase font-sans mb-1">
+                        <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default font-mono text-[11px] text-status-critical overflow-x-auto">
+                          <div className="text-[10px] text-text-tertiary uppercase font-sans mb-1 font-medium">
                             Evidence:
                           </div>
                           <code>{stage.evidenceCode}</code>
@@ -652,79 +617,82 @@ export const ReviewPanel: React.FC = () => {
                       )}
 
                       {isSpeaking && (
-                        <div className="ml-8 pt-1 flex items-center gap-2 text-purple-400 text-xs font-mono animate-pulse">
-                          <Volume2 className="w-4 h-4 animate-bounce" />
+                        <div className="pt-1 flex items-center gap-2 text-accent text-xs font-mono">
+                          <Volume2 strokeWidth={1.5} className="w-4 h-4 text-accent" />
                           <span>Speaking argument in audio synthesis...</span>
                         </div>
                       )}
-                    </div>
+                    </Card>
                   );
                 })}
               </div>
             </>
           ) : (
-            <div className="p-12 text-center bg-[#161b22] rounded-xl border border-[#30363d] text-slate-300 space-y-3">
-              <Users2 className="w-12 h-12 mx-auto text-purple-400 mb-2" />
-              <h3 className="font-bold text-white text-sm">No Active Finding in Debate Arena</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Trigger a multi-agent review to dispatch all 5 autonomous agents (Architecture, Security, Performance, Testing, Git) and view live debate rounds and voting consensus.
-              </p>
-              <button
+            <Card className="p-12 text-center text-text-secondary space-y-4">
+              <Users2 strokeWidth={1.5} className="w-10 h-10 mx-auto text-text-tertiary" />
+              <div className="space-y-1">
+                <h3 className="font-semibold text-text-primary text-[15px]">No Active Finding in Debate Arena</h3>
+                <p className="text-[13px] text-text-secondary max-w-md mx-auto">
+                  Trigger a multi-agent review to dispatch all 5 autonomous agents and view live debate rounds and voting consensus.
+                </p>
+              </div>
+              <Button
+                variant="accent"
                 onClick={runReview}
                 disabled={isReviewRunning}
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-semibold shadow-md transition-all inline-flex items-center gap-2"
+                className="gap-2"
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
+                <Play strokeWidth={1.5} className="w-3.5 h-3.5 fill-current" />
                 <span>Run 5-Agent Review & Debate</span>
-              </button>
-            </div>
+              </Button>
+            </Card>
           )}
         </div>
       )}
 
       {/* TAB 3: CENTRAL ORCHESTRATION SUMMARY */}
       {activeTab === 'orchestration' && (
-        <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
-          <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
+        <Card className="p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-border-default pb-4">
             <div>
-              <h3 className="font-bold text-sm text-white">Central Review Orchestration Ledger</h3>
-              <p className="text-slate-400 text-xs">
+              <h3 className="text-[15px] font-semibold text-text-primary">Central Review Orchestration Ledger</h3>
+              <p className="text-[13px] text-text-secondary font-normal">
                 Cross-agent verification statistics, challenge audits, and repository merge readiness score.
               </p>
             </div>
-            <span className="px-3 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-bold">
+            <Badge variant="good">
               Health Score: {orchestrationSummary.overallHealthScore}/100
-            </span>
+            </Badge>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d]">
-              <span className="text-slate-500 uppercase text-[10px]">Total Issues Flagged</span>
-              <span className="text-lg font-bold text-white block">{orchestrationSummary.totalIssuesFound}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono">
+            <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default">
+              <span className="text-text-tertiary uppercase text-[11px] block mb-1">Total Issues</span>
+              <span className="text-[24px] font-semibold font-mono tabular-nums text-text-primary block">{orchestrationSummary.totalIssuesFound}</span>
             </div>
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d]">
-              <span className="text-slate-500 uppercase text-[10px]">Critical Blockers</span>
-              <span className="text-lg font-bold text-rose-400 block">{orchestrationSummary.criticalCount}</span>
+            <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default">
+              <span className="text-text-tertiary uppercase text-[11px] block mb-1">Critical Blockers</span>
+              <span className="text-[24px] font-semibold font-mono tabular-nums text-status-critical block">{orchestrationSummary.criticalCount}</span>
             </div>
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d]">
-              <span className="text-slate-500 uppercase text-[10px]">Challenges Resolved</span>
-              <span className="text-lg font-bold text-emerald-400 block">{orchestrationSummary.challengesResolved}</span>
+            <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default">
+              <span className="text-text-tertiary uppercase text-[11px] block mb-1">Challenges Resolved</span>
+              <span className="text-[24px] font-semibold font-mono tabular-nums text-status-good block">{orchestrationSummary.challengesResolved}</span>
             </div>
-            <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d]">
-              <span className="text-slate-500 uppercase text-[10px]">Cross-Agent Verifications</span>
-              <span className="text-lg font-bold text-cyan-400 block">{orchestrationSummary.crossAgentVerifications}</span>
+            <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default">
+              <span className="text-text-tertiary uppercase text-[11px] block mb-1">Verifications</span>
+              <span className="text-[24px] font-semibold font-mono tabular-nums text-text-primary block">{orchestrationSummary.crossAgentVerifications}</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
-            <span className="font-semibold text-slate-200 text-xs block font-mono">
+          <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-2">
+            <span className="font-medium text-text-primary text-xs block font-mono">
               Final Reviewer Synthesized Notes:
             </span>
-            <p className="text-slate-300 text-xs leading-relaxed font-sans">
+            <p className="text-[13px] text-text-secondary leading-relaxed font-sans font-normal">
               {orchestrationSummary.finalReviewerNotes}
             </p>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Side Drawer */}

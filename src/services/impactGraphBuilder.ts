@@ -231,21 +231,11 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
         if (!edgeSet.has(edgeId)) {
           edgeSet.add(edgeId);
 
-          const strokeColor =
-            targetMod.layer === 'database'
-              ? '#6366f1'
-              : targetMod.layer === 'service'
-              ? '#06b6d4'
-              : targetMod.layer === 'api'
-              ? '#10b981'
-              : '#8b5cf6';
-
           edges.push({
             id: edgeId,
             source: targetMod.id,
             target: sourceMod.id,
-            animated: true,
-            style: { stroke: strokeColor, strokeWidth: 2 },
+            style: { stroke: '#383F47', strokeWidth: 1 },
           });
         }
       }
@@ -267,7 +257,7 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
             id: edgeId,
             source: candidate.id,
             target: sourceMod.id,
-            style: { stroke: '#06b6d4', strokeWidth: 1.5 },
+            style: { stroke: '#383F47', strokeWidth: 1 },
           });
         }
       }
@@ -282,7 +272,7 @@ export function buildDynamicImpactGraph(repo: RepositoryData): {
             id: edgeId,
             source: sourceDir.length < candidateDir.length ? candidate.id : sourceMod.id,
             target: sourceDir.length < candidateDir.length ? sourceMod.id : candidate.id,
-            style: { stroke: '#475569', strokeWidth: 1, strokeDasharray: '3 3' },
+            style: { stroke: '#383F47', strokeWidth: 1 },
           });
         }
       }

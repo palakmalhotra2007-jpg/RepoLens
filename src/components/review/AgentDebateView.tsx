@@ -2,20 +2,15 @@ import React from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
 import { reviewAgents } from '../../config/agents';
 import { SeverityBadge } from '../common/Badge';
+import { Button, Badge, Card, CardHeader, CardContent } from '../../frontend';
 import {
   Users2,
   Play,
   Square,
   Volume2,
   CheckCircle2,
-  XCircle,
-  AlertTriangle,
   FileCode,
-  ShieldAlert,
   ArrowRight,
-  Sparkles,
-  Bot,
-  HelpCircle,
 } from 'lucide-react';
 
 export const AgentDebateView: React.FC = () => {
@@ -29,14 +24,13 @@ export const AgentDebateView: React.FC = () => {
     stopAudioPlayback,
     voicePlayback,
     selectFileByPath,
-    setActiveView,
   } = useRepoStore();
 
   const finding = activeDebateFinding || reviewFindings[0];
 
   if (!finding) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 text-xs">
+      <div className="flex-1 flex items-center justify-center text-text-tertiary text-xs bg-bg-base">
         No active review findings available for debate.
       </div>
     );
@@ -45,57 +39,63 @@ export const AgentDebateView: React.FC = () => {
   const primaryAgent = reviewAgents.find((a) => a.id === finding.primaryAgent);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-6xl mx-auto">
+    <div className="flex-1 overflow-y-auto p-8 space-y-6 text-text-primary max-w-6xl mx-auto bg-bg-base select-none">
       {/* Top Header: Debate Title & Multi-Agent Audio Player */}
-      <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono font-medium flex items-center gap-1.5">
-              <Users2 className="w-3.5 h-3.5" /> 5-Stage Agent Collaboration Pipeline
-            </span>
-            <SeverityBadge severity={finding.severity} />
+      <Card className="p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Badge variant="accent">
+                5-Stage Collaboration Pipeline
+              </Badge>
+              <SeverityBadge severity={finding.severity} />
+            </div>
+            <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">{finding.title}</h2>
+            <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
+              <FileCode strokeWidth={1.5} className="w-4 h-4 text-text-tertiary" />
+              <button
+                onClick={() => selectFileByPath(finding.file, finding.lineRange.start)}
+                className="hover:underline text-accent"
+              >
+                {finding.file}:{finding.lineRange.start}-{finding.lineRange.end}
+              </button>
+              <span className="text-border-strong">•</span>
+              <span className="text-text-tertiary">
+                Initiated by: <span className="text-text-primary font-medium">{primaryAgent?.name}</span>
+              </span>
+            </div>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">{finding.title}</h2>
-          <div className="flex items-center gap-2 text-xs font-mono text-indigo-400">
-            <FileCode className="w-3.5 h-3.5" />
-            <button
-              onClick={() => selectFileByPath(finding.file, finding.lineRange.start)}
-              className="hover:underline text-indigo-300"
-            >
-              {finding.file}:{finding.lineRange.start}-{finding.lineRange.end}
-            </button>
-            <span className="text-slate-600">•</span>
-            <span className="text-slate-400">
-              Initiated by: <span className="text-slate-200 font-semibold">{primaryAgent?.name}</span>
-            </span>
-          </div>
-        </div>
 
-        {/* Audio Debate Action Button */}
-        <div className="flex items-center gap-2">
-          {voicePlayback.isPlaying ? (
-            <button
-              onClick={stopAudioPlayback}
-              className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all"
-            >
-              <Square className="w-3.5 h-3.5 fill-current" />
-              <span>Stop Audio Debate</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => playMultiAgentDebate(finding)}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Play Multi-Agent Audio Debate</span>
-            </button>
-          )}
+          {/* Audio Debate Action Button */}
+          <div className="flex items-center gap-2">
+            {voicePlayback.isPlaying ? (
+              <Button
+                variant="primary"
+                onClick={stopAudioPlayback}
+                className="gap-2 text-status-critical"
+              >
+                <Square strokeWidth={1.5} className="w-3.5 h-3.5 fill-current" />
+                <span>Stop Audio Debate</span>
+              </Button>
+            ) : (
+              <Button
+                variant="accent"
+                onClick={() => playMultiAgentDebate(finding)}
+                className="gap-2"
+              >
+                <Play strokeWidth={1.5} className="w-3.5 h-3.5 fill-current" />
+                <span>Play Audio Debate</span>
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Select Finding Switcher Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-mono no-scrollbar">
-        <span className="text-slate-500 text-[11px] uppercase mr-1">Select Finding:</span>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-mono">
+        <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary mr-1">
+          Topic:
+        </span>
         {reviewFindings.map((f) => {
           const isSelected = f.id === finding.id;
           return (
@@ -106,13 +106,12 @@ export const AgentDebateView: React.FC = () => {
                 setActiveDebateFinding(f);
                 setActiveDebateStageIndex(0);
               }}
-              className={`px-3 py-1.5 rounded-lg border whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-[4px] border whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                 isSelected
-                  ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200 font-semibold'
-                  : 'bg-[#161b22] border-[#30363d] text-slate-400 hover:text-slate-200 hover:bg-[#21262d]'
+                  ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
+                  : 'bg-bg-surface border-border-default text-text-secondary hover:bg-bg-surface-2 hover:text-text-primary'
               }`}
             >
-              <span className="text-xs">{reviewAgents.find(a => a.id === f.primaryAgent)?.avatar}</span>
               <span className="truncate max-w-[200px]">{f.title}</span>
             </button>
           );
@@ -120,8 +119,8 @@ export const AgentDebateView: React.FC = () => {
       </div>
 
       {/* 5-Stage Collaboration Pipeline Visual Indicator */}
-      <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] space-y-3">
-        <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+      <Card className="p-4 space-y-3">
+        <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
           Collaboration Progression Pipeline
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs font-mono">
@@ -138,35 +137,35 @@ export const AgentDebateView: React.FC = () => {
               <div
                 key={step.num}
                 onClick={() => setActiveDebateStageIndex(idx)}
-                className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                className={`p-3 rounded-[6px] border cursor-pointer transition-colors ${
                   isCurrent
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200 font-bold'
+                    ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
                     : isCompleted
-                    ? 'bg-[#0d1117] border-emerald-500/40 text-emerald-300'
-                    : 'bg-[#0d1117] border-[#30363d] text-slate-400 hover:text-slate-200'
+                    ? 'bg-bg-surface-2 border-border-default text-status-good'
+                    : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-slate-500 font-bold">STAGE {step.num}</span>
+                  <span className="text-[10px] text-text-tertiary font-bold">STAGE {step.num}</span>
                   {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 strokeWidth={1.5} className="w-3.5 h-3.5 text-status-good" />
                   ) : isCurrent ? (
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                   ) : null}
                 </div>
                 <div className="font-semibold truncate text-[11px]">{step.label}</div>
-                <div className="text-[10px] text-slate-500 truncate mt-0.5">{step.desc}</div>
+                <div className="text-[10px] text-text-tertiary truncate mt-0.5">{step.desc}</div>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* Main Grid: Debate Timeline & 5-Agent Agreement Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Debate Stage Timeline Column */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+          <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
             Debate Arguments & Evidence Log ({finding.debateStages?.length || 0} Stages)
           </div>
 
@@ -183,61 +182,50 @@ export const AgentDebateView: React.FC = () => {
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-xl border transition-all space-y-3 ${
-                    isSpeaking
-                      ? 'bg-indigo-950/20 border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500'
-                      : 'bg-[#161b22] border-[#30363d]'
+                  className={`p-4 rounded-[6px] border transition-colors space-y-3 bg-bg-surface ${
+                    isSpeaking ? 'border-accent' : 'border-border-default'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{agent.avatar}</span>
-                      <div>
-                        <div className="font-bold text-xs text-white flex items-center gap-2">
-                          <span>{stage.agentName}</span>
-                          <span
-                            className={`px-2 py-0.2 rounded text-[10px] font-mono uppercase font-semibold ${
-                              stage.stance === 'flagged'
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                : stage.stance === 'disagree_challenge'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                : stage.stance === 'verified'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                            }`}
-                          >
-                            {stage.stageTitle}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          {agent.role}
-                        </div>
+                    <div>
+                      <div className="font-medium text-xs text-text-primary flex items-center gap-2">
+                        <span>{stage.agentName}</span>
+                        <Badge
+                          variant={
+                            stage.stance === 'flagged' ? 'critical' :
+                            stage.stance === 'disagree_challenge' ? 'warn' :
+                            stage.stance === 'verified' ? 'good' : 'accent'
+                          }
+                          className="text-[10px]"
+                        >
+                          {stage.stageTitle}
+                        </Badge>
+                      </div>
+                      <div className="text-[11px] text-text-tertiary font-mono mt-0.5">
+                        {agent.role}
                       </div>
                     </div>
 
-                    <span className="text-[10px] font-mono text-slate-500">{stage.timestamp}</span>
+                    <span className="text-[10px] font-mono text-text-tertiary">{stage.timestamp}</span>
                   </div>
 
-                  {/* Argument Content */}
-                  <p className="text-xs text-slate-300 leading-relaxed font-sans pl-8">
+                  <p className="text-[13px] text-text-secondary leading-relaxed">
                     {stage.argumentText}
                   </p>
 
-                  {/* Evidence Code Box */}
                   {stage.evidenceCode && (
-                    <div className="ml-8 p-3 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-[11px] text-rose-300/90 overflow-x-auto">
-                      <div className="text-[10px] text-slate-500 uppercase font-sans mb-1">
-                        AST Evidence Tokens:
+                    <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default font-mono text-[11px] text-status-critical overflow-x-auto">
+                      <div className="text-[10px] text-text-tertiary uppercase font-sans mb-1 font-medium">
+                        Evidence:
                       </div>
                       <code>{stage.evidenceCode}</code>
                     </div>
                   )}
 
-                  {/* Audio Speaking Animation Bar */}
                   {isSpeaking && (
-                    <div className="ml-8 pt-1 flex items-center gap-2 text-indigo-400 text-xs font-mono animate-pulse">
-                      <Volume2 className="w-4 h-4 animate-bounce" />
-                      <span>Speaking argument aloud ({voicePlayback.speakingAgentId})...</span>
+                    <div className="pt-1 flex items-center gap-2 text-accent text-xs font-mono">
+                      <Volume2 strokeWidth={1.5} className="w-4 h-4 text-accent" />
+                      <span>Speaking argument in audio synthesis...</span>
                     </div>
                   )}
                 </div>
@@ -246,58 +234,36 @@ export const AgentDebateView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5-Agent Agreement & Vote Matrix Column */}
+        {/* Right Column: Agreement Matrix & Actions */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] shadow-xl space-y-3">
-            <div className="flex items-center justify-between border-b border-[#30363d] pb-2.5">
-              <span className="font-semibold text-xs text-white flex items-center gap-1.5 font-mono">
-                <Bot className="w-4 h-4 text-indigo-400" /> 5-Agent Voting Matrix
-              </span>
-              <span className="text-[11px] font-mono text-emerald-400 font-bold">
-                {finding.confidence}% Consensus
-              </span>
+          <Card className="p-4 space-y-3">
+            <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] flex items-center justify-between">
+              <span>Consensus Voting Ledger</span>
+              <Badge variant="good">
+                {finding.agreementMatrix?.filter((v) => v.vote === 'agree').length || 0}/5 Agreed
+              </Badge>
             </div>
 
             <div className="space-y-2">
-              {finding.agreementMatrix?.map((item) => {
-                const agent = reviewAgents.find((a) => a.id === item.agentId);
-                return (
-                  <div
-                    key={item.agentId}
-                    className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-1 text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{agent?.avatar}</span>
-                        <span className="font-semibold text-slate-200 text-xs">{agent?.shortName}</span>
-                      </div>
-                      <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold uppercase ${
-                          item.vote === 'agree'
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : item.vote === 'disagree'
-                            ? 'bg-rose-500/10 text-rose-400'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {item.vote}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-snug">{item.reasonSummary}</p>
+              {finding.agreementMatrix?.map((item) => (
+                <div
+                  key={item.agentId}
+                  className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-text-primary text-xs">{item.agentName}</span>
+                    <Badge
+                      variant={item.vote === 'agree' ? 'good' : 'critical'}
+                      className="text-[10px]"
+                    >
+                      {item.vote}
+                    </Badge>
                   </div>
-                );
-              })}
+                  <p className="text-[11px] text-text-secondary line-clamp-2">{item.reasonSummary}</p>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* Action to View Patch */}
-          <button
-            onClick={() => setActiveView('review')}
-            className="w-full py-2.5 px-4 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
-          >
-            <span>Inspect Verified Fix Diff in Review Panel</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileNode } from '../../types/repository';
 import { useRepoStore } from '../../store/useRepoStore';
+import { Badge } from '../../frontend';
 import {
   Folder,
   FolderOpen,
@@ -11,10 +12,6 @@ import {
   ChevronDown,
   Search,
   Database,
-  Flame,
-  Trash2,
-  Copy,
-  Layers,
 } from 'lucide-react';
 
 interface FileTreeProps {
@@ -24,13 +21,11 @@ interface FileTreeProps {
 export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
   const {
     activeFile,
-    setActiveFile,
-    setActiveLine,
     repo,
     selectFileByPath,
   } = useRepoStore();
 
-  const [activeExplorerTab, setActiveExplorerTab] = useState<'files' | 'hotspots' | 'deadcode' | 'duplicates'>('files');
+  const [activeExplorerTab, setActiveExplorerTab] = useState<'files' | 'hotspots' | 'deadcode'>('files');
   const [searchTerm, setSearchTerm] = useState('');
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({
     src: true,
@@ -47,23 +42,23 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
   const getFileIcon = (node: FileNode) => {
     if (node.type === 'directory') {
       return openFolders[node.path] ? (
-        <FolderOpen className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+        <FolderOpen strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />
       ) : (
-        <Folder className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+        <Folder strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />
       );
     }
 
     const ext = node.name.split('.').pop()?.toLowerCase();
     if (ext === 'ts' || ext === 'tsx' || ext === 'js' || ext === 'jsx') {
-      return <FileCode className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />;
+      return <FileCode strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />;
     }
     if (ext === 'prisma' || ext === 'sql') {
-      return <Database className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
+      return <Database strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />;
     }
     if (ext === 'json') {
-      return <FileJson className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />;
+      return <FileJson strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />;
     }
-    return <FileText className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />;
+    return <FileText strokeWidth={1.5} className="w-4 h-4 text-text-secondary flex-shrink-0" />;
   };
 
   const renderNode = (node: FileNode, depth = 0) => {
@@ -84,26 +79,25 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
             if (isDir) {
               toggleFolder(node.path);
             } else {
-              // Use selectFileByPath to properly load content from GitHub if needed
               selectFileByPath(node.path);
             }
           }}
-          style={{ paddingLeft: `${depth * 10 + 6}px` }}
-          className={`flex items-center gap-1.5 py-1 px-1.5 rounded text-xs font-mono cursor-pointer transition-colors ${
+          style={{ paddingLeft: `${depth * 12 + 6}px` }}
+          className={`flex items-center gap-1.5 py-1 px-2 rounded-[4px] text-xs font-mono cursor-pointer transition-colors ${
             isSelected
-              ? 'bg-[#21262d] text-white font-semibold border-l-2 border-indigo-500'
-              : 'text-slate-400 hover:bg-[#161b22] hover:text-slate-200'
+              ? 'bg-bg-surface-2 text-text-primary font-medium border-l-2 border-accent'
+              : 'text-text-secondary hover:bg-bg-surface-2 hover:text-text-primary'
           }`}
         >
           {isDir && (
-            <span className="text-slate-500">
-              {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            <span className="text-text-tertiary">
+              {isOpen ? <ChevronDown strokeWidth={1.5} className="w-3.5 h-3.5" /> : <ChevronRight strokeWidth={1.5} className="w-3.5 h-3.5" />}
             </span>
           )}
           {getFileIcon(node)}
           <span className="truncate">{node.name}</span>
           {node.symbols && node.symbols.length > 0 && (
-            <span className="ml-auto text-[9px] text-slate-500 font-mono">
+            <span className="ml-auto text-[10px] text-text-tertiary font-mono">
               {node.symbols.length}s
             </span>
           )}
@@ -119,35 +113,35 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
   };
 
   return (
-    <div className="w-64 bg-[#0d1117] border-r border-[#30363d] flex flex-col h-full flex-shrink-0 text-xs">
-      {/* Tab Switcher: Files, Hotspots, Dead Code, Duplication */}
-      <div className="flex border-b border-[#30363d] bg-[#161b22] p-1 gap-1 font-mono text-[10px]">
+    <div className="w-64 bg-bg-base border-r border-border-default flex flex-col h-full flex-shrink-0 text-xs">
+      {/* Tab Switcher */}
+      <div className="flex border-b border-border-default bg-bg-surface px-2 gap-4 text-xs font-medium">
         <button
           onClick={() => setActiveExplorerTab('files')}
-          className={`flex-1 py-1 text-center rounded transition-all ${
+          className={`pb-2 pt-2.5 transition-colors border-b-2 -mb-px ${
             activeExplorerTab === 'files'
-              ? 'bg-[#21262d] text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'border-accent text-text-primary'
+              : 'border-transparent text-text-tertiary hover:text-text-secondary'
           }`}
         >
           Files
         </button>
         <button
           onClick={() => setActiveExplorerTab('hotspots')}
-          className={`flex-1 py-1 text-center rounded transition-all ${
+          className={`pb-2 pt-2.5 transition-colors border-b-2 -mb-px ${
             activeExplorerTab === 'hotspots'
-              ? 'bg-[#21262d] text-orange-300 font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'border-accent text-text-primary'
+              : 'border-transparent text-text-tertiary hover:text-text-secondary'
           }`}
         >
           Hotspots
         </button>
         <button
           onClick={() => setActiveExplorerTab('deadcode')}
-          className={`flex-1 py-1 text-center rounded transition-all ${
+          className={`pb-2 pt-2.5 transition-colors border-b-2 -mb-px ${
             activeExplorerTab === 'deadcode'
-              ? 'bg-[#21262d] text-rose-300 font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'border-accent text-text-primary'
+              : 'border-transparent text-text-tertiary hover:text-text-secondary'
           }`}
         >
           Dead Code
@@ -157,15 +151,15 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
       {/* Explorer Content */}
       {activeExplorerTab === 'files' && (
         <>
-          <div className="p-2 border-b border-[#30363d]">
+          <div className="p-2 border-b border-border-default">
             <div className="relative">
-              <Search className="w-3 h-3 text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
+              <Search strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary absolute left-2 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Filter files..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#161b22] border border-[#30363d] rounded pl-7 pr-2 py-1 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                className="w-full bg-bg-surface-2 border border-border-default rounded-[6px] pl-7 pr-2 py-1 text-[11px] text-text-primary placeholder-text-tertiary focus:outline-none focus:border-border-strong font-mono"
               />
             </div>
           </div>
@@ -178,21 +172,21 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
       {/* Hotspots Tab */}
       {activeExplorerTab === 'hotspots' && (
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          <div className="text-[10px] uppercase font-mono text-slate-500 px-1">
+          <div className="text-[11px] uppercase font-medium text-text-tertiary px-1 tracking-[0.04em]">
             Top Maintenance Hotspots ({repo.hotspots.length})
           </div>
           {repo.hotspots.map((h) => (
             <div
               key={h.id}
               onClick={() => selectFileByPath(h.file)}
-              className="p-2 rounded bg-[#161b22] border border-[#30363d] hover:border-orange-500/50 cursor-pointer transition-all space-y-1"
+              className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default hover:bg-[#262B31] cursor-pointer transition-colors space-y-1.5"
             >
               <div className="flex items-center justify-between font-mono">
-                <span className="font-semibold text-indigo-300 text-[11px]">{h.functionName}()</span>
-                <span className="text-orange-400 text-[10px] font-bold">CC: {h.cyclomaticComplexity}</span>
+                <span className="font-medium text-text-primary text-[12px]">{h.functionName}()</span>
+                <Badge variant="warn">CC: {h.cyclomaticComplexity}</Badge>
               </div>
-              <div className="text-[10px] text-slate-500 font-mono truncate">{h.file}</div>
-              <p className="text-[10px] text-slate-400 leading-snug">{h.reason}</p>
+              <div className="text-[11px] text-text-tertiary font-mono truncate">{h.file}</div>
+              <p className="text-[12px] text-text-secondary leading-snug">{h.reason}</p>
             </div>
           ))}
         </div>
@@ -201,21 +195,21 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
       {/* Dead Code Tab */}
       {activeExplorerTab === 'deadcode' && (
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          <div className="text-[10px] uppercase font-mono text-slate-500 px-1">
+          <div className="text-[11px] uppercase font-medium text-text-tertiary px-1 tracking-[0.04em]">
             Unreferenced AST Exports ({repo.deadCodeItems.length})
           </div>
           {repo.deadCodeItems.map((d) => (
             <div
               key={d.id}
               onClick={() => selectFileByPath(d.file, d.line)}
-              className="p-2 rounded bg-[#161b22] border border-[#30363d] hover:border-rose-500/50 cursor-pointer transition-all space-y-1"
+              className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default hover:bg-[#262B31] cursor-pointer transition-colors space-y-1.5"
             >
               <div className="flex items-center justify-between font-mono">
-                <span className="font-semibold text-rose-300 text-[11px]">{d.symbolName}</span>
-                <span className="text-slate-400 text-[10px]">L{d.line}</span>
+                <span className="font-medium text-text-primary text-[12px]">{d.symbolName}</span>
+                <Badge variant="neutral">L{d.line}</Badge>
               </div>
-              <div className="text-[10px] text-slate-500 font-mono truncate">{d.file}</div>
-              <p className="text-[10px] text-slate-400 leading-snug">{d.suggestion}</p>
+              <div className="text-[11px] text-text-tertiary font-mono truncate">{d.file}</div>
+              <p className="text-[12px] text-text-secondary leading-snug">{d.suggestion}</p>
             </div>
           ))}
         </div>
