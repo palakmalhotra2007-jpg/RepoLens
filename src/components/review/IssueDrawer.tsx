@@ -22,7 +22,7 @@ interface IssueDrawerProps {
 }
 
 export const IssueDrawer: React.FC<IssueDrawerProps> = ({ finding, onClose }) => {
-  const { applyFix, selectFileByPath, setRightPanelTab, setIsRightPanelOpen } = useRepoStore();
+  const { applyFix, selectFileByPath } = useRepoStore();
 
   if (!finding) return null;
 
@@ -126,8 +126,7 @@ export const IssueDrawer: React.FC<IssueDrawerProps> = ({ finding, onClose }) =>
       <div className="p-4 border-t border-slate-800 bg-slate-950/90 flex items-center justify-between">
         <button
           onClick={() => {
-            setRightPanelTab('debate');
-            setIsRightPanelOpen(true);
+            // Context Panel only available in Impact view
             onClose();
           }}
           className="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1"

@@ -188,7 +188,6 @@ export const RepoCopilotView: React.FC = () => {
     speakAgentBriefing,
     stopAudioPlayback,
     setIsLLMSettingsModalOpen,
-    setIsVoiceSettingsModalOpen,
     repo,
   } = useRepoStore();
 
@@ -222,12 +221,10 @@ export const RepoCopilotView: React.FC = () => {
   };
 
   const comprehensiveQuickPrompts = [
-    `Explain the end-to-end architecture and module boundaries of ${repo.name}`,
     'Where is the main entry point, request routing, and state lifecycle?',
     'Perform a security audit: identify vulnerabilities, auth flaws, and exposed secrets',
     'Analyze performance bottlenecks, caching efficiency, and database queries',
     'Check test coverage, edge cases, and reliability gaps across the codebase',
-    'What is the blast radius and potential breaking changes if core models are refactored?',
   ];
 
   return (
@@ -240,18 +237,14 @@ export const RepoCopilotView: React.FC = () => {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-white text-xs truncate">
-                RepoLens Copilot • {repo.name}
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-mono text-[10px]">
-                Unified AI
+              <span className="font-semibold text-white text-sm truncate">
+                RepoLens Copilot
               </span>
             </div>
-            <div className="text-[10px] font-mono text-slate-400 truncate flex items-center gap-1.5">
-              <span>Branch:</span>
-              <span className="text-slate-200">{repo.currentBranch}</span>
-              <span className="text-slate-500">•</span>
-              <span className="text-indigo-400">Deep Codebase Intelligence</span>
+            <div className="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1.5">
+              <span className="text-slate-300">{repo.name}</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400">{repo.currentBranch}</span>
             </div>
           </div>
         </div>
@@ -265,14 +258,6 @@ export const RepoCopilotView: React.FC = () => {
           >
             <Bot className="w-3.5 h-3.5 text-indigo-400" />
             <span className="hidden sm:inline">AI Settings</span>
-          </button>
-
-          <button
-            onClick={() => setIsVoiceSettingsModalOpen(true)}
-            className="p-1.5 rounded-lg bg-[#0d1117] hover:bg-[#21262d] text-slate-300 hover:text-white text-xs flex items-center gap-1 font-mono border border-[#30363d] hover:border-indigo-500/40 transition-colors"
-            title="Voice Speech Settings"
-          >
-            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
           </button>
         </div>
       </div>
@@ -505,11 +490,14 @@ export const RepoCopilotView: React.FC = () => {
         
         {/* Voice recording hint */}
         {isRecordingVoice && (
-          <div className="mt-2 text-center">
+          <div className="mt-2 text-center space-y-1">
             <p className="text-xs text-rose-400 font-mono flex items-center justify-center gap-2">
               <span className="animate-pulse">●</span>
               Recording... Speak clearly into your microphone
               <span className="animate-pulse">●</span>
+            </p>
+            <p className="text-[10px] text-slate-500">
+              Check browser console (F12) for detailed status
             </p>
           </div>
         )}
