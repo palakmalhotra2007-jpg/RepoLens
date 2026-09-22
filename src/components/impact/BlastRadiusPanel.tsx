@@ -1,6 +1,5 @@
 import React from 'react';
 import { BlastRadiusResult } from '../../types/impact';
-import { mockBlastRadii } from '../../data/mockImpactGraph';
 import { useRepoStore } from '../../store/useRepoStore';
 import {
   ShieldAlert,
@@ -21,7 +20,19 @@ interface BlastRadiusPanelProps {
 export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNodeId }) => {
   const { selectFileByPath, sendChatMessage } = useRepoStore();
 
-  const activeRadius: BlastRadiusResult = (selectedNodeId && mockBlastRadii[selectedNodeId]) || mockBlastRadii['api_create_intent'];
+  // Create empty radius result if no data
+  const activeRadius: BlastRadiusResult = {
+    targetNodeId: selectedNodeId || 'unknown',
+    targetLabel: selectedNodeId || 'No node selected',
+    overallRiskCategory: 'LOW',
+    riskScore: 0,
+    affectedComponents: [],
+    affectedFiles: [],
+    affectedRoutes: [],
+    breakingChangeRisks: [],
+    impactSummary: 'No node selected. Click on any node in the graph to see its blast radius analysis.',
+    suggestedValidationSteps: ['Select a node to view validation steps'],
+  };
 
   const getRiskBadge = (category: string) => {
     switch (category) {
@@ -41,7 +52,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
       {/* Target Node Title */}
       <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-slate-300">
             Selected Target Node
           </span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${getRiskBadge(activeRadius.overallRiskCategory)}`}>
@@ -56,7 +67,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
         {/* Risk Score Gauge */}
         <div className="pt-2">
           <div className="flex justify-between text-[11px] font-mono mb-1">
-            <span className="text-slate-400">Calculated Blast Radius</span>
+            <span className="text-slate-200">Calculated Blast Radius</span>
             <span className="text-rose-400 font-bold">{activeRadius.riskScore} / 100</span>
           </div>
           <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -70,17 +81,17 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
 
       {/* Impact Summary */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-semibold text-slate-300 font-mono flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
           <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> "What breaks if I change this?"
         </span>
-        <p className="text-slate-400 leading-relaxed bg-slate-900/40 p-3 rounded-xl border border-slate-800/60 text-[11px]">
+        <p className="text-slate-200 leading-relaxed bg-slate-900/40 p-3 rounded-xl border border-slate-800/60 text-[11px]">
           {activeRadius.impactSummary}
         </p>
       </div>
 
       {/* Affected Files List */}
       <div className="space-y-2">
-        <span className="text-[11px] font-semibold text-slate-300 font-mono flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
           <FileCode className="w-3.5 h-3.5 text-indigo-400" /> Directly Impacted Files ({activeRadius.affectedFiles.length})
         </span>
         <div className="space-y-1">
@@ -88,10 +99,10 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
             <button
               key={idx}
               onClick={() => selectFileByPath(file)}
-              className="w-full text-left p-2 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-slate-300 font-mono text-[11px] flex items-center justify-between group transition-all"
+              className="w-full text-left p-2 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800 text-slate-200 font-mono text-[11px] flex items-center justify-between group transition-all"
             >
               <span className="truncate text-indigo-300 font-medium">{file}</span>
-              <ArrowRight className="w-3 h-3 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
             </button>
           ))}
         </div>
@@ -99,14 +110,14 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
 
       {/* Affected Routes & Components */}
       <div className="space-y-2">
-        <span className="text-[11px] font-semibold text-slate-300 font-mono flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
           <Server className="w-3.5 h-3.5 text-cyan-400" /> Downstream Routes & UI Elements
         </span>
         <div className="flex flex-wrap gap-1.5">
           {activeRadius.affectedRoutes.concat(activeRadius.affectedComponents).map((item, idx) => (
             <span
               key={idx}
-              className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-300 border border-slate-800 text-[10px] font-mono"
+              className="px-2 py-0.5 rounded-md bg-slate-900 text-slate-200 border border-slate-800 text-[10px] font-mono"
             >
               {item}
             </span>
@@ -116,10 +127,10 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({ selectedNode
 
       {/* Suggested Validation Steps */}
       <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-        <span className="text-[11px] font-semibold text-slate-200 font-mono flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-100 font-mono flex items-center gap-1.5">
           <Terminal className="w-3.5 h-3.5 text-emerald-400" /> Suggested Safe Validation Steps
         </span>
-        <ul className="space-y-1.5 text-slate-400 text-[11px]">
+        <ul className="space-y-1.5 text-slate-200 text-[11px]">
           {activeRadius.suggestedValidationSteps.map((step, idx) => (
             <li key={idx} className="flex items-start gap-1.5">
               <span className="text-emerald-400 select-none">•</span>

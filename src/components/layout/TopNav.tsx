@@ -8,13 +8,11 @@ import {
   Settings,
   PanelRightClose,
   PanelRightOpen,
-  Sparkles,
   ChevronDown,
   CheckCircle2,
   RefreshCw,
   Zap,
   Volume2,
-  VolumeX,
 } from 'lucide-react';
 
 export const TopNav: React.FC = () => {
@@ -29,9 +27,10 @@ export const TopNav: React.FC = () => {
     setIsRightPanelOpen,
     runReview,
     isReviewRunning,
-    activeView,
+    reviewState,
+    reviewProgress,
     setActiveView,
-    reviewFindings,
+    comparisonState,
     branchComparison,
     voicePlayback,
     stopAudioPlayback,
@@ -39,10 +38,9 @@ export const TopNav: React.FC = () => {
 
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
 
-  const openIssuesCount = reviewFindings.filter((f) => f.status === 'open').length;
-  const conflictsCount = branchComparison.conflicts.filter(
-    (c) => c.resolutionStatus === 'unresolved'
-  ).length;
+  const conflictsCount = comparisonState === 'conflicts_found'
+    ? branchComparison.conflicts.filter((c) => c.resolutionStatus === 'unresolved').length
+    : 0;
 
   return (
     <header className="h-12 bg-[#161b22] border-b border-[#30363d] px-4 flex items-center justify-between z-30 select-none text-xs">
@@ -139,7 +137,7 @@ export const TopNav: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400" />
-            <span className="text-slate-400 group-hover:text-slate-200">
+            <span className="text-slate-400 group-hover:text-slate-200 truncate">
               Search files, symbols, routes, or ask AI...
             </span>
           </div>
@@ -151,26 +149,7 @@ export const TopNav: React.FC = () => {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {/* Run 5-Agent Review */}
-        <button
-          onClick={runReview}
-          disabled={isReviewRunning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-sm disabled:opacity-50 transition-all"
-        >
-          {isReviewRunning ? (
-            <>
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>Scanning...</span>
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 fill-current" />
-              <span>Run 5-Agent Review</span>
-            </>
-          )}
-        </button>
-
-        {/* Merge Conflict Alert Badge */}
+        {/* Merge Conflict Alert Badge - ONLY when comparison has conflicts */}
         {conflictsCount > 0 && (
           <button
             onClick={() => setActiveView('merge')}
@@ -183,15 +162,6 @@ export const TopNav: React.FC = () => {
         )}
 
         <div className="h-4 w-[1px] bg-[#30363d]" />
-
-        {/* Voice Settings */}
-        <button
-          onClick={() => setIsVoiceSettingsModalOpen(true)}
-          className="p-1.5 rounded hover:bg-[#21262d] text-slate-400 hover:text-slate-200"
-          title="Agent Voice Persona Settings"
-        >
-          <Volume2 className="w-4 h-4" />
-        </button>
 
         {/* General Settings */}
         <button

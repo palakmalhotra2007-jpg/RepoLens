@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
-import { sampleChangePlans } from '../../data/mockImpactGraph';
 import {
   Sparkles,
   Layers,
@@ -30,7 +29,33 @@ export const ChangeAssistant: React.FC = () => {
     setCustomGoal('');
   };
 
-  const plan = activeChangePlan || sampleChangePlans[0];
+  // Show alert if no active plan
+  if (!activeChangePlan) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-md text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto">
+            <Sparkles className="w-8 h-8 text-indigo-400" />
+          </div>
+          <h3 className="text-lg font-bold text-white">AI Change Assistant</h3>
+          <p className="text-sm text-slate-400">
+            This feature generates step-by-step change plans using LLM analysis.
+            Currently in development.
+          </p>
+          <div className="pt-4">
+            <button
+              onClick={() => setCustomGoal('Add Apple Pay support')}
+              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 text-sm transition-colors"
+            >
+              Try Example: "Add Apple Pay support"
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const plan = activeChangePlan;
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-100 max-w-5xl mx-auto">
@@ -75,13 +100,15 @@ export const ChangeAssistant: React.FC = () => {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-[11px] font-mono text-slate-500">Quick Templates:</span>
           <button
-            onClick={() => setActiveChangePlan(sampleChangePlans[0])}
+            type="button"
+            onClick={() => setCustomGoal('Add Apple Pay & Google Pay support')}
             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-mono transition-colors"
           >
             💳 Add Apple Pay & Google Pay
           </button>
           <button
-            onClick={() => setActiveChangePlan(sampleChangePlans[1])}
+            type="button"
+            onClick={() => setCustomGoal('Implement Role-Based Access Control (RBAC)')}
             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-mono transition-colors"
           >
             🛡️ Role-Based Access Control (RBAC)
@@ -128,7 +155,7 @@ export const ChangeAssistant: React.FC = () => {
           Actionable Implementation Steps ({plan.steps.length} Steps)
         </h4>
 
-        {plan.steps.map((step) => (
+        {plan.steps.map((step: any) => (
           <div
             key={step.stepNumber}
             className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3"
@@ -180,7 +207,7 @@ export const ChangeAssistant: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-rose-400" /> Security Safeguards
           </span>
           <ul className="space-y-1.5 text-[11px] text-rose-200/80">
-            {plan.securityConsiderations.map((sec, idx) => (
+            {plan.securityConsiderations.map((sec: string, idx: number) => (
               <li key={idx} className="flex items-start gap-1.5">
                 <span className="text-rose-400 select-none">•</span>
                 <span>{sec}</span>
@@ -195,7 +222,7 @@ export const ChangeAssistant: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Validation & Test Checklist
           </span>
           <ul className="space-y-1.5 text-[11px] text-emerald-200/80">
-            {plan.requiredTests.map((t, idx) => (
+            {plan.requiredTests.map((t: string, idx: number) => (
               <li key={idx} className="flex items-start gap-1.5">
                 <span className="text-emerald-400 select-none">•</span>
                 <span>{t}</span>

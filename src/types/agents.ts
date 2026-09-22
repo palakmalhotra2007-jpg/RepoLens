@@ -2,6 +2,7 @@ import { AgentVoiceProfile } from './voice';
 
 export type AgentId = 
   | 'code_quality_arch'
+  | 'code_quality'
   | 'security'
   | 'performance_db'
   | 'testing_reliability'
@@ -10,6 +11,8 @@ export type AgentId =
   | 'final_reviewer';
 
 export type SeverityLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+export type ReviewState = 'not_started' | 'running' | 'debating' | 'consensus' | 'completed';
 
 export type DebateStage = 
   | 'independent_analysis'

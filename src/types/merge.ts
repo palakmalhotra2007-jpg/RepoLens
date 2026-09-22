@@ -8,6 +8,13 @@ export interface MergeConflictBlock {
   conflictType: ConflictType;
   title: string;
   reason: string;
+  whatConflicted: string;
+  whyItConflicted: string;
+  whatEachBranchChanged: {
+    base: string;
+    ours: string;
+    theirs: string;
+  };
   whyItHappened: {
     baseContext: string;
     oursIntent: string;
@@ -21,6 +28,8 @@ export interface MergeConflictBlock {
   customCode?: string;
   affectedComponents: string[];
   semanticRiskSeverity: 'critical' | 'high' | 'medium' | 'low';
+  semanticImpact: string;
+  resolutionSuggestion: string;
 }
 
 export interface SemanticConflictAlert {
@@ -39,7 +48,10 @@ export interface SemanticConflictAlert {
   diffB: string;
 }
 
+export type ComparisonState = 'no_comparison' | 'comparing' | 'conflicts_found' | 'no_conflicts';
+
 export interface BranchComparison {
+  comparisonState: ComparisonState;
   baseBranch: string;
   currentBranch: string;
   targetBranch: string;
@@ -47,6 +59,14 @@ export interface BranchComparison {
   behindCount: number;
   conflictingFilesCount: number;
   semanticConflictsCount: number;
+  addedFiles: string[];
+  deletedFiles: string[];
+  modifiedFiles: string[];
+  renamedFiles: string[];
+  changedFunctions: { name: string; file: string; impact: string }[];
+  changedApis: { route: string; method: string; impact: string }[];
+  changedDatabaseStructures: { table: string; change: string }[];
+  changedDependencies: { name: string; oldVersion: string; newVersion: string }[];
   conflicts: MergeConflictBlock[];
   semanticAlerts: SemanticConflictAlert[];
 }

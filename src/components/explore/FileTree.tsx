@@ -84,8 +84,8 @@ export const FileTree: React.FC<FileTreeProps> = ({ nodes }) => {
             if (isDir) {
               toggleFolder(node.path);
             } else {
-              setActiveFile(node);
-              setActiveLine(null);
+              // Use selectFileByPath to properly load content from GitHub if needed
+              selectFileByPath(node.path);
             }
           }}
           style={{ paddingLeft: `${depth * 10 + 6}px` }}

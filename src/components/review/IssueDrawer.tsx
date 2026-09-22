@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReviewFinding } from '../../types/agents';
-import { reviewAgents } from '../../data/mockReviewAgents';
+import { reviewAgents } from '../../config/agents';
 import { SeverityBadge } from '../common/Badge';
 import { DiffViewer } from '../common/DiffViewer';
 import { useRepoStore } from '../../store/useRepoStore';

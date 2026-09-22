@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
-import { reviewAgents } from '../../data/mockReviewAgents';
+import { reviewAgents } from '../../config/agents';
 import { SeverityBadge } from '../common/Badge';
 import {
   Users2,

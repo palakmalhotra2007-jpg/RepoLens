@@ -18,6 +18,14 @@ export const defaultAgentVoiceProfiles: Record<AgentId, AgentVoiceProfile> = {
     gender: 'male',
     toneDescription: 'Fast-paced, metric-focused optimizer voice',
   },
+  code_quality: {
+    agentId: 'code_quality',
+    pitch: 1.0,
+    rate: 1.0,
+    lang: 'en-US',
+    gender: 'female',
+    toneDescription: 'Methodical code quality voice',
+  },
   code_quality_arch: {
     agentId: 'code_quality_arch',
     pitch: 1.0,

@@ -1,17 +1,55 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RepositoryData, FileNode, HotspotItem, DeadCodeItem, DuplicateCodeItem } from '../types/repository';
-import { ReviewFinding, OrchestrationSummary, AgentId, SeverityLevel, DebateStageItem } from '../types/agents';
-import { MergeConflictBlock, SemanticConflictAlert, BranchComparison } from '../types/merge';
+import { ReviewFinding, OrchestrationSummary, AgentId, SeverityLevel, DebateStageItem, ReviewState } from '../types/agents';
+import { MergeConflictBlock, SemanticConflictAlert, BranchComparison, ComparisonState } from '../types/merge';
 import { ChatMessage, JumpAction } from '../types/chat';
 import { FeatureChangePlan } from '../types/impact';
-import { VoiceSettings, VoicePlaybackState } from '../types/voice';
-import { mockShopFlowRepository } from '../data/mockShopFlowRepo';
-import { mockReviewFindings, mockOrchestrationSummary, reviewAgents } from '../data/mockReviewAgents';
-import { mockBranchComparison } from '../data/mockMergeConflicts';
-import { sampleChangePlans } from '../data/mockImpactGraph';
-import { findFileByPath } from '../services/repoParser';
-import { voiceEngine, defaultAgentVoiceProfiles } from '../services/voiceService';
+import { reviewAgents } from '../config/agents';
+import { createEmptyRepository, createEmptyBranchComparison } from '../config/defaultRepository';
+import { findFileByPath, flattenFileTree } from '../services/repoParser';
+import { ragService } from '../services/ragService';
+import { APP_CONFIG, MESSAGES, AGENT_CONFIG } from '../config/constants';
 import confetti from 'canvas-confetti';
+
+// Voice-related types (placeholder for missing voice functionality)
+interface VoiceSettings {
+  enabled: boolean;
+  rate: number;
+  pitch: number;
+  volume: number;
+  autoPlayResponses: boolean;
+}
+
+interface VoicePlayback {
+  isPlaying: boolean;
+  speakingAgentId: AgentId | null;
+  currentText: string | null;
+  progressPercent: number;
+}
+
+// Voice engine placeholder (should be replaced with actual implementation)
+const voiceEngine = {
+  speak: (text: string, agentId: AgentId, settings: VoiceSettings, onStart?: () => void, onEnd?: () => void) => {
+    // Placeholder implementation
+    if (onStart) onStart();
+    setTimeout(() => {
+      if (onEnd) onEnd();
+    }, 1000);
+  },
+  stopSpeaking: () => {
+    // Placeholder implementation
+  },
+  startListening: (onResult: (text: string) => void, onError: (error: any) => void, onEnd: () => void) => {
+    // Placeholder implementation
+    setTimeout(() => {
+      onResult('Voice input not implemented');
+      onEnd();
+    }, 1000);
+  },
+  stopListening: () => {
+    // Placeholder implementation
+  },
+};
 
 export type AppView = 
   | 'overview' 
@@ -21,6 +59,7 @@ export type AppView =
   | 'merge' 
   | 'impact' 
   | 'history' 
+  | 'copilot'
   | 'chat';
 
 interface RepoStoreContextType {
@@ -43,6 +82,8 @@ interface RepoStoreContextType {
   setIsConnectModalOpen: (open: boolean) => void;
   isSettingsModalOpen: boolean;
   setIsSettingsModalOpen: (open: boolean) => void;
+  isLLMSettingsModalOpen: boolean;
+  setIsLLMSettingsModalOpen: (open: boolean) => void;
   isVoiceSettingsModalOpen: boolean;
   setIsVoiceSettingsModalOpen: (open: boolean) => void;
   isRightPanelOpen: boolean;
@@ -50,18 +91,19 @@ interface RepoStoreContextType {
   rightPanelTab: 'chat' | 'debate' | 'symbols';
   setRightPanelTab: (tab: 'chat' | 'debate' | 'symbols') => void;
 
-  // Voice Engine State
+  // Voice & Audio
   voiceSettings: VoiceSettings;
-  setVoiceSettings: React.Dispatch<React.SetStateAction<VoiceSettings>>;
-  voicePlayback: VoicePlaybackState;
+  setVoiceSettings: (settings: VoiceSettings) => void;
+  voicePlayback: VoicePlayback;
   speakAgentBriefing: (text: string, agentId: AgentId) => void;
-  playMultiAgentDebate: (finding: ReviewFinding) => void;
+  playMultiAgentDebate: (finding: ReviewFinding) => Promise<void>;
   stopAudioPlayback: () => void;
   isRecordingVoice: boolean;
   startVoiceInput: (targetAgentId?: AgentId) => void;
   stopVoiceInput: () => void;
 
   // Multi-Agent Review
+  reviewState: ReviewState;
   reviewFindings: ReviewFinding[];
   orchestrationSummary: OrchestrationSummary;
   selectedFinding: ReviewFinding | null;
@@ -71,7 +113,7 @@ interface RepoStoreContextType {
   severityFilter: SeverityLevel | 'all';
   setSeverityFilter: (filter: SeverityLevel | 'all') => void;
   isReviewRunning: boolean;
-  reviewProgress: { label: string; percent: number };
+  reviewProgress: { label: string; percent: number; stage: string };
   runReview: () => Promise<void>;
   applyFix: (findingId: string) => void;
   dismissFinding: (findingId: string) => void;
@@ -82,12 +124,15 @@ interface RepoStoreContextType {
   activeDebateStageIndex: number;
   setActiveDebateStageIndex: (index: number) => void;
 
-  // Merge Conflicts
+  // Merge Conflicts & Branch Comparison
+  comparisonState: ComparisonState;
   branchComparison: BranchComparison;
   selectedConflict: MergeConflictBlock | null;
   setSelectedConflict: (c: MergeConflictBlock | null) => void;
   selectedSemanticAlert: SemanticConflictAlert | null;
   setSelectedSemanticAlert: (a: SemanticConflictAlert | null) => void;
+  compareBranches: (baseBranch: string, targetBranch: string) => Promise<void>;
+  resetComparison: () => void;
   resolveConflictBlock: (conflictId: string, resolution: 'ours' | 'theirs' | 'ai' | 'custom', customCode?: string) => void;
 
   // Impact Analysis & Change Assistant
@@ -107,30 +152,35 @@ interface RepoStoreContextType {
 const RepoContext = createContext<RepoStoreContextType | undefined>(undefined);
 
 export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [repo, setRepo] = useState<RepositoryData>(mockShopFlowRepository);
-  const [activeView, setActiveView] = useState<AppView>('overview');
-  const [activeFile, setActiveFile] = useState<FileNode | null>(() => {
-    return findFileByPath(mockShopFlowRepository.rootFiles, 'src/pages/Checkout.tsx') || null;
-  });
+  const [repo, setRepo] = useState<RepositoryData>(createEmptyRepository());
+  const [activeView, setActiveView] = useState<AppView>(APP_CONFIG.ui.defaultView);
+  const [activeFile, setActiveFile] = useState<FileNode | null>(null);
   const [activeLine, setActiveLine] = useState<number | null>(null);
+
+  // Initialize RAG service with repository on mount
+  useEffect(() => {
+    ragService.indexRepository(repo);
+    console.log('[RAG] Repository indexed:', ragService.getIndexStats());
+  }, [repo]);
 
   // Modals & Panels
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isLLMSettingsModalOpen, setIsLLMSettingsModalOpen] = useState(false);
   const [isVoiceSettingsModalOpen, setIsVoiceSettingsModalOpen] = useState(false);
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
-  const [rightPanelTab, setRightPanelTab] = useState<'chat' | 'debate' | 'symbols'>('chat');
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<'chat' | 'debate' | 'symbols'>(APP_CONFIG.ui.rightPanelDefaultTab);
 
-  // Voice Engine State
+  // Voice & Audio State
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
-    enabled: true,
+    enabled: APP_CONFIG.voice.defaultEnabled,
+    rate: APP_CONFIG.voice.defaultRate,
+    pitch: APP_CONFIG.voice.defaultPitch,
+    volume: APP_CONFIG.voice.defaultVolume,
     autoPlayResponses: false,
-    provider: 'webspeech',
-    globalVolume: 1.0,
-    agentProfiles: defaultAgentVoiceProfiles,
   });
-  const [voicePlayback, setVoicePlayback] = useState<VoicePlaybackState>({
+  const [voicePlayback, setVoicePlayback] = useState<VoicePlayback>({
     isPlaying: false,
     speakingAgentId: null,
     currentText: null,
@@ -138,43 +188,56 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
-  // Multi-Agent Review State
-  const [reviewFindings, setReviewFindings] = useState<ReviewFinding[]>(mockReviewFindings);
-  const [orchestrationSummary, setOrchestrationSummary] = useState<OrchestrationSummary>(mockOrchestrationSummary);
-  const [selectedFinding, setSelectedFinding] = useState<ReviewFinding | null>(mockReviewFindings[0]);
-  const [activeDebateFinding, setActiveDebateFinding] = useState<ReviewFinding | null>(mockReviewFindings[0]);
+  // Multi-Agent Review State (Starts as 'not_started' - only begins on explicit click)
+  const [reviewState, setReviewState] = useState<ReviewState>('not_started');
+  const [reviewFindings, setReviewFindings] = useState<ReviewFinding[]>([]);
+  const [orchestrationSummary, setOrchestrationSummary] = useState<OrchestrationSummary>({
+    totalIssuesFound: 0,
+    criticalCount: 0,
+    highCount: 0,
+    mediumCount: 0,
+    lowCount: 0,
+    infoCount: 0,
+    crossAgentVerifications: 0,
+    challengesResolved: 0,
+    overallHealthScore: 0,
+    readinessVerdict: 'review_required',
+    finalReviewerNotes: '',
+    orchestratorAudioSummary: import.meta.env.VITE_REVIEW_NOT_RUN_MESSAGE || 'Review not yet run. Click "Run 5-Agent Review" to analyze the repository.',
+  });
+  const [selectedFinding, setSelectedFinding] = useState<ReviewFinding | null>(null);
+  const [activeDebateFinding, setActiveDebateFinding] = useState<ReviewFinding | null>(null);
   const [activeDebateStageIndex, setActiveDebateStageIndex] = useState(0);
   const [agentFilter, setAgentFilter] = useState<AgentId | 'all'>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityLevel | 'all'>('all');
   const [isReviewRunning, setIsReviewRunning] = useState(false);
-  const [reviewProgress, setReviewProgress] = useState({ label: '', percent: 0 });
+  const [reviewProgress, setReviewProgress] = useState({ label: '', percent: 0, stage: '' });
 
-  // Merge Conflict State
-  const [branchComparison, setBranchComparison] = useState<BranchComparison>(mockBranchComparison);
-  const [selectedConflict, setSelectedConflict] = useState<MergeConflictBlock | null>(mockBranchComparison.conflicts[0]);
-  const [selectedSemanticAlert, setSelectedSemanticAlert] = useState<SemanticConflictAlert | null>(mockBranchComparison.semanticAlerts[0]);
+  // Merge Conflict & Comparison State (Starts as 'no_comparison' - only compares when version/branch is selected)
+  const [comparisonState, setComparisonState] = useState<ComparisonState>('no_comparison');
+  const [branchComparison, setBranchComparison] = useState<BranchComparison>(createEmptyBranchComparison());
+  const [selectedConflict, setSelectedConflict] = useState<MergeConflictBlock | null>(null);
+  const [selectedSemanticAlert, setSelectedSemanticAlert] = useState<SemanticConflictAlert | null>(null);
 
   // Impact Analysis State
-  const [selectedImpactNodeId, setSelectedImpactNodeId] = useState<string | null>('api_create_intent');
-  const [activeChangePlan, setActiveChangePlan] = useState<FeatureChangePlan | null>(sampleChangePlans[0]);
+  const [selectedImpactNodeId, setSelectedImpactNodeId] = useState<string | null>(null);
+  const [activeChangePlan, setActiveChangePlan] = useState<FeatureChangePlan | null>(null);
 
   // AI Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
-      id: 'msg_welcome',
+      id: import.meta.env.VITE_WELCOME_MESSAGE_ID || 'msg_welcome',
       sender: 'assistant',
-      respondingAgentId: 'orchestrator',
-      content: `**RepoLens Engineering Intelligence ready for ${repo.name}.**
+      respondingAgentId: AGENT_CONFIG.defaultAgentId,
+      content: `${APP_CONFIG.chat.welcomeMessage} for ${repo.name}.
 
-I understand the full codebase architecture across **React, Node.js/Express, PostgreSQL/Prisma, and Stripe**.
+I understand the full codebase architecture across React, Node.js/Express, PostgreSQL/Prisma, and Stripe.
 
-Ask any technical question or query one of the **5 specialized review agents**:`,
-      timestamp: 'Just now',
+Ask any technical question or query one of the 5 specialized review agents:`,
+      timestamp: MESSAGES.timestamps.justNow,
       jumpActions: [
         { label: 'Where is authentication?', type: 'code', targetId: 'server/middleware/authGuard.ts', line: 4, description: 'JWT pipeline in authGuard.ts' },
-        { label: 'Inspect 5-Agent Review', type: 'finding', targetId: 'issue_sec_01', description: 'Review critical security blockers' },
         { label: 'View Checkout Dependency Graph', type: 'impact_node', targetId: 'api_create_intent', description: 'Topology for /api/checkout/create-intent' },
-        { label: 'Inspect 3-Way Merge Conflicts', type: 'merge_conflict', targetId: 'conflict_checkout_01', description: 'Idempotency parameter conflict' },
       ]
     }
   ]);
@@ -190,19 +253,38 @@ Ask any technical question or query one of the **5 specialized review agents**:`
         setIsCommandPaletteOpen(false);
         setIsConnectModalOpen(false);
         setIsSettingsModalOpen(false);
-        setIsVoiceSettingsModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const selectFileByPath = (path: string, line?: number) => {
+  const selectFileByPath = async (path: string, line?: number) => {
     const file = findFileByPath(repo.rootFiles, path);
     if (file) {
+      // If file content not loaded and repo is from GitHub, fetch it
+      if (!file.content && !repo.isDemo && repo.fullName) {
+        try {
+          const { fetchRawFileContent } = await import('../services/githubFetcher');
+          console.log(`[FileLoader] Fetching content for: ${file.path}`);
+          const content = await fetchRawFileContent(repo.fullName, repo.currentBranch, file.path);
+          file.content = content;
+          
+          // Extract symbols from the loaded content
+          const { extractCodeSymbols } = await import('../services/repoParser');
+          file.symbols = extractCodeSymbols(file.name, content);
+          console.log(`[FileLoader] Successfully loaded: ${file.path}`);
+        } catch (error) {
+          console.error(`[FileLoader] Failed to load file ${file.path}:`, error);
+          file.content = `// ${MESSAGES.errors.loadFailed}\n// ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}\n\n// This file could not be loaded from GitHub.\n// Please check:\n// 1. Your GitHub token is valid\n// 2. The repository is accessible\n// 3. The file path exists: ${file.path}`;
+        }
+      }
+      
       setActiveFile(file);
       if (line) setActiveLine(line);
       setActiveView('explore');
+    } else {
+      console.warn(`[FileLoader] File not found in tree: ${path}`);
     }
   };
 
@@ -212,8 +294,16 @@ Ask any technical question or query one of the **5 specialized review agents**:`
                      findFileByPath(newRepo.rootFiles, 'README.md') ||
                      newRepo.rootFiles[0];
     setActiveFile(firstFile || null);
-    setActiveView('overview');
+    setActiveView(APP_CONFIG.ui.defaultView);
     setIsConnectModalOpen(false);
+    // Reset review and merge comparison state for new repo
+    setReviewState('not_started');
+    setReviewFindings([]);
+    setSelectedFinding(null);
+    setActiveDebateFinding(null);
+    setComparisonState('no_comparison');
+    setBranchComparison(createEmptyBranchComparison());
+    setSelectedConflict(null);
   };
 
   const switchBranch = (branch: string) => {
@@ -323,29 +413,45 @@ Ask any technical question or query one of the **5 specialized review agents**:`
     setIsRecordingVoice(false);
   };
 
+  // 5-Agent Review Execution Flow: Not Started -> Running -> Debating -> Consensus -> Completed
   const runReview = async () => {
     setIsReviewRunning(true);
+    setReviewState('running');
     setActiveView('review');
-    const steps = [
-      { label: 'Spawning 5 Autonomous Agents...', percent: 20 },
-      { label: '🛡️ Security Guardian scanning auth & webhooks...', percent: 40 },
-      { label: '⚡ Performance & DB Agent checking indexes & N+1...', percent: 60 },
-      { label: '🧪 Testing & 🌿 Git Agents analyzing branch drift...', percent: 80 },
-      { label: '👑 Central Orchestrator conducting debate & consensus...', percent: 100 },
-    ];
 
-    for (const step of steps) {
-      setReviewProgress(step);
-      await new Promise((r) => setTimeout(r, 400));
-    }
+    try {
+      // Use LLM-powered analysis
+      const { llmAnalyzer } = await import('../services/llm/llmAnalyzer');
+      
+      const { findings, summary } = await llmAnalyzer.analyzeRepository(repo, (label, percent) => {
+        if (percent < 30) {
+          setReviewState('running');
+        } else if (percent < 85) {
+          setReviewState('debating');
+        } else {
+          setReviewState('consensus');
+        }
+        setReviewProgress({ label, percent, stage: 'analysis' });
+      });
 
-    setReviewFindings(mockReviewFindings.map(f => ({ ...f, status: 'open' })));
-    setIsReviewRunning(false);
-    confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
+      setReviewFindings(findings);
+      setOrchestrationSummary(summary);
+      setSelectedFinding(findings[0] || null);
+      setActiveDebateFinding(findings[0] || null);
+      setActiveDebateStageIndex(0);
+      setReviewState('completed');
+      setIsReviewRunning(false);
+      confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
 
-    // Optional audio summary
-    if (voiceSettings.autoPlayResponses) {
-      speakAgentBriefing(mockOrchestrationSummary.orchestratorAudioSummary, 'orchestrator');
+      // Optional audio summary
+      if (voiceSettings?.autoPlayResponses) {
+        speakAgentBriefing(summary.orchestratorAudioSummary, AGENT_CONFIG.defaultAgentId);
+      }
+    } catch (error) {
+      console.error('[Review] Analysis failed:', error);
+      setReviewState('not_started');
+      setIsReviewRunning(false);
+      alert(`${MESSAGES.errors.reviewFailed}: ${error instanceof Error ? error.message : MESSAGES.placeholders.unknownError}.\n\n${MESSAGES.errors.llmNotConfigured}`);
     }
   };
 
@@ -365,6 +471,57 @@ Ask any technical question or query one of the **5 specialized review agents**:`
     setReviewFindings((prev) =>
       prev.map((f) => (f.id === findingId ? { ...f, status: 'dismissed' } : f))
     );
+  };
+
+  // Branch Comparison Flow: No Comparison -> Comparing -> Conflicts Found / No Conflicts
+  const compareBranches = async (baseBranch: string, targetBranch: string) => {
+    setComparisonState('comparing');
+    
+    // Simulate loading delay
+    await new Promise((r) => setTimeout(r, 800));
+    
+    // For demo repositories, use mock comparison data
+    if (repo.isDemo) {
+      const { getMockBranchComparison } = await import('../data/mockBranchComparisons');
+      const mockComparison = getMockBranchComparison(repo.id, baseBranch, targetBranch);
+      
+      if (mockComparison) {
+        setBranchComparison(mockComparison);
+        setComparisonState(mockComparison.comparisonState);
+        return;
+      }
+    }
+    
+    // For non-demo repos or if no mock data available, show empty comparison
+    setBranchComparison({
+      comparisonState: 'no_conflicts',
+      baseBranch,
+      currentBranch: repo.currentBranch,
+      targetBranch,
+      aheadCount: 0,
+      behindCount: 0,
+      conflictingFilesCount: 0,
+      semanticConflictsCount: 0,
+      addedFiles: [],
+      deletedFiles: [],
+      modifiedFiles: [],
+      renamedFiles: [],
+      changedFunctions: [],
+      changedApis: [],
+      changedDatabaseStructures: [],
+      changedDependencies: [],
+      conflicts: [],
+      semanticAlerts: [],
+    });
+    
+    setComparisonState('no_conflicts');
+  };
+
+  const resetComparison = () => {
+    setComparisonState('no_comparison');
+    setBranchComparison(createEmptyBranchComparison());
+    setSelectedConflict(null);
+    setSelectedSemanticAlert(null);
   };
 
   const resolveConflictBlock = (
@@ -395,12 +552,9 @@ Ask any technical question or query one of the **5 specialized review agents**:`
   };
 
   const generateChangePlanForPrompt = (prompt: string) => {
-    const lower = prompt.toLowerCase();
-    if (lower.includes('admin') || lower.includes('rbac') || lower.includes('role')) {
-      setActiveChangePlan(sampleChangePlans[1]);
-    } else {
-      setActiveChangePlan(sampleChangePlans[0]);
-    }
+    // Real change plan generation would happen here with LLM
+    alert(`${import.meta.env.VITE_CHANGE_PLAN_MESSAGE || 'Change plan generation requires LLM integration. Feature in development.'}`);
+    setActiveChangePlan(null);
   };
 
   const handleJumpAction = (action: JumpAction) => {
@@ -409,7 +563,7 @@ Ask any technical question or query one of the **5 specialized review agents**:`
         selectFileByPath(action.targetId, action.line);
         break;
       case 'finding': {
-        const f = reviewFindings.find(item => item.id === action.targetId) || reviewFindings[0];
+        const f = reviewFindings.find(item => item.id === action.targetId);
         if (f) {
           setSelectedFinding(f);
           setActiveView('review');
@@ -417,11 +571,11 @@ Ask any technical question or query one of the **5 specialized review agents**:`
         break;
       }
       case 'debate': {
-        const f = reviewFindings.find(item => item.id === action.targetId) || reviewFindings[0];
+        const f = reviewFindings.find(item => item.id === action.targetId);
         if (f) {
           setActiveDebateFinding(f);
           setActiveDebateStageIndex(0);
-          setActiveView('debate');
+          setActiveView('review');
         }
         break;
       }
@@ -430,7 +584,7 @@ Ask any technical question or query one of the **5 specialized review agents**:`
         setActiveView('impact');
         break;
       case 'merge_conflict': {
-        const c = branchComparison.conflicts.find(item => item.id === action.targetId) || branchComparison.conflicts[0];
+        const c = branchComparison.conflicts.find(item => item.id === action.targetId);
         if (c) {
           setSelectedConflict(c);
           setActiveView('merge');
@@ -445,171 +599,242 @@ Ask any technical question or query one of the **5 specialized review agents**:`
       id: `usr_${Date.now()}`,
       sender: 'user',
       content,
-      timestamp: 'Just now',
+      timestamp: MESSAGES.timestamps.justNow,
     };
 
     setChatMessages((prev) => [...prev, userMsg]);
 
-    setTimeout(() => {
-      let replyContent = '';
-      let respondingAgent: AgentId = targetAgentId || 'orchestrator';
-      let codeReferences: { file: string; lineStart: number; lineEnd: number; snippet: string }[] | undefined = undefined;
-      let jumpActions: JumpAction[] = [];
-      const lower = content.toLowerCase();
+    // Add loading message
+    const loadingMsgId = `loading_${Date.now()}`;
+    const loadingMsg: ChatMessage = {
+      id: loadingMsgId,
+      sender: 'assistant',
+      respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
+      content: '⏳ Analyzing your question and searching the codebase...',
+      timestamp: MESSAGES.timestamps.justNow,
+    };
+    setChatMessages((prev) => [...prev, loadingMsg]);
 
-      if (
-        lower.includes('everything') ||
-        lower.includes('explain') ||
-        lower.includes('overview') ||
-        lower.includes('what is') ||
-        lower.includes('architecture') ||
-        lower.includes('summary') ||
-        lower.includes('stack') ||
-        lower.includes('about')
-      ) {
-        respondingAgent = 'orchestrator';
-        replyContent = `**[Review Orchestrator]**: Complete Repository Intelligence Overview for **${repo.name}**
+    // Run async operation without blocking
+    (async () => {
+      try {
+        // Use RAG service to find relevant context
+        const ragContext = ragService.searchContext(content, 5);
+        const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
+          file: result.file,
+          lineStart: result.lineStart,
+          lineEnd: result.lineEnd,
+          snippet: result.content,
+        })) : undefined;
 
-### 📦 Application Architecture & Tech Stack
-ShopFlow is a production-grade full-stack e-commerce engine structured as follows:
-- **Frontend Layer**: React 18 with TypeScript, Tailwind CSS, and Stripe Elements integration (\`src/pages/Checkout.tsx\`).
-- **API & Backend Layer**: Node.js + Express REST API with JWT bearer authentication & rate limiting (\`server/index.ts\`, \`server/routes/\`).
-- **Data & Caching Layer**: PostgreSQL with Prisma ORM (\`prisma/schema.prisma\`) and Redis caching for product catalogs (\`server/services/redisCache.ts\`).
-- **Payment Pipeline**: Stripe SDK with server-side price recalculation, atomic inventory locking, and webhook signature verification (\`server/services/stripeService.ts\`, \`server/routes/webhooks.ts\`).
+        // Build context for LLM
+        let contextText = `Repository: ${repo.name}\n`;
+        contextText += `Description: ${repo.description}\n`;
+        contextText += `Languages: ${repo.languages.map(l => l.name).join(', ')}\n`;
+        contextText += `Frameworks: ${repo.frameworks.map(f => f.name).join(', ')}\n\n`;
+        
+        if (ragContext.length > 0) {
+          contextText += `Relevant Code Context:\n`;
+          ragContext.forEach((ctx, idx) => {
+            contextText += `\n[${idx + 1}] ${ctx.file} (lines ${ctx.lineStart}-${ctx.lineEnd}):\n`;
+            contextText += `${ctx.content.substring(0, 500)}\n`;
+          });
+        }
 
----
+        // Import and use LLM service
+        const { llmService } = await import('../services/llm/llmService');
+        
+        // Check if LLM is available
+        const status = await llmService.checkProviderStatus();
+        console.log('[Chat] LLM Status:', status);
+        
+        if (!status.ollama.available && !status.gemini.available) {
+          throw new Error('No LLM provider available. Please ensure Ollama is running or configure Gemini API key.');
+        }
 
-### 🔍 Current Multi-Agent Audit Summary (5 Findings Active)
-1. 🛡️ **Critical Security**: Hardcoded JWT default fallback secret in \`authGuard.ts:6\`.
-2. ⚡ **Performance Hazard**: N+1 database queries when fetching user order history in \`checkout.ts:34\`.
-3. 🧪 **Reliability Risk**: Missing webhook event signature verification in \`webhooks.ts:18\`.
-4. 🏛️ **Code Quality**: Business logic coupled directly into Express route handlers.
-5. 🌿 **Branch Hazard**: 2 textual merge conflicts & 2 semantic drift alerts against \`main\`.`;
+        // Get agent-specific system prompt
+        const agentProfile = reviewAgents.find(a => a.id === targetAgentId) || {
+          name: AGENT_CONFIG.orchestrator.name,
+          role: 'Repository Intelligence Assistant',
+        };
 
-        codeReferences = [
-          { file: 'src/pages/Checkout.tsx', lineStart: 18, lineEnd: 65, snippet: 'export const CheckoutPage: React.FC' },
-          { file: 'server/routes/checkout.ts', lineStart: 14, lineEnd: 52, snippet: 'checkoutRouter.post("/create-intent", ...)' },
-          { file: 'server/middleware/authGuard.ts', lineStart: 4, lineEnd: 24, snippet: 'export function authGuard(req: Request, res: Response, next: NextFunction)' },
-          { file: 'prisma/schema.prisma', lineStart: 1, lineEnd: 35, snippet: 'model Order { id String @id ... }' },
-        ];
+        const systemPrompt = `You are ${agentProfile.name}, a ${agentProfile.role}.
 
-        jumpActions = [
-          { label: 'Inspect 5-Agent Review', type: 'finding', targetId: 'issue_sec_01' },
-          { label: 'Inspect 5-Stage Agent Debate', type: 'debate', targetId: 'issue_sec_01' },
-          { label: 'Resolve 3-Way Merge Conflicts', type: 'merge_conflict', targetId: 'conflict_checkout_01' },
-          { label: 'Explore Interactive Topology', type: 'impact_node', targetId: 'api_create_intent' },
-          { label: 'Browse Code in Studio', type: 'code', targetId: 'src/pages/Checkout.tsx', line: 1 },
-        ];
-      } else if (lower.includes('auth') || lower.includes('login') || lower.includes('jwt') || lower.includes('secret') || lower.includes('security')) {
-        respondingAgent = 'security';
-        replyContent = `**[Security Guardian Agent]**:
-Authentication & Authorization Pipeline Analysis:
+You are helping a developer understand their codebase. Answer questions about the repository in a helpful, conversational manner like ChatGPT would.
 
-1. **Client Token Management**: \`src/context/AuthContext.tsx\` stores JWT tokens and manages session expiration.
-2. **API Request Interceptor**: \`src/services/apiClient.ts\` attaches \`Authorization: Bearer <token>\` on all secure API calls.
-3. **Route Guard Middleware**: \`server/middleware/authGuard.ts\` extracts and validates JWT signatures.
+Guidelines:
+- Be conversational and friendly
+- Provide specific, actionable insights
+- Reference actual code when relevant
+- Explain technical concepts clearly
+- Suggest next steps or related questions
+- Keep responses concise but informative (2-4 paragraphs)
 
-⚠️ **Critical Vulnerability Flagged**:
-\`server/middleware/authGuard.ts\` uses a hardcoded fallback string (\`dev_insecure_fallback_secret_key_change_me\`) when \`process.env.JWT_SECRET\` is unset, enabling forged admin tokens.`;
+${contextText}
 
-        codeReferences = [
-          { file: 'server/middleware/authGuard.ts', lineStart: 4, lineEnd: 24, snippet: 'export function authGuard(req: Request, res: Response, next: NextFunction)' },
-          { file: 'src/context/AuthContext.tsx', lineStart: 16, lineEnd: 46, snippet: 'export const AuthProvider: React.FC' },
-        ];
-        jumpActions = [
-          { label: 'Open authGuard.ts:4', type: 'code', targetId: 'server/middleware/authGuard.ts', line: 4 },
-          { label: 'View Security Finding & Fix', type: 'finding', targetId: 'issue_sec_01' },
-          { label: 'Inspect Security Debate', type: 'debate', targetId: 'issue_sec_01' },
-        ];
-      } else if (lower.includes('checkout') || lower.includes('stripe') || lower.includes('payment') || lower.includes('cart')) {
-        respondingAgent = 'performance_db';
-        replyContent = `**[Performance & Database Agent]**:
-End-to-End Stripe Checkout Flow & DB Locking:
+Answer the user's question based on this repository context.`;
 
-1. **Client Intent**: \`src/pages/Checkout.tsx\` initializes PaymentIntent via \`usePayment()\`.
-2. **Server Price Recalculation**: \`server/routes/checkout.ts\` pulls unit prices directly from PostgreSQL to prevent client price tampering.
-3. **Pessimistic Inventory Locking**: \`server/services/inventoryService.ts\` locks stock quantities inside an atomic transaction.
-4. **Stripe Webhook Fulfillment**: \`server/routes/webhooks.ts\` updates order status to \`PAID\` with replay deduplication.`;
+        console.log('[Chat] Sending to LLM...');
+        const response = await llmService.chat([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: content },
+        ], {
+          temperature: 0.7,
+          maxTokens: 1024,
+        });
 
-        codeReferences = [
-          { file: 'src/pages/Checkout.tsx', lineStart: 18, lineEnd: 65, snippet: 'export const CheckoutPage: React.FC' },
-          { file: 'server/routes/checkout.ts', lineStart: 14, lineEnd: 52, snippet: 'checkoutRouter.post("/create-intent", ...)' },
-        ];
-        jumpActions = [
-          { label: 'Open CheckoutPage.tsx', type: 'code', targetId: 'src/pages/Checkout.tsx', line: 18 },
-          { label: 'View Checkout Topology Graph', type: 'impact_node', targetId: 'api_create_intent' },
-          { label: 'Inspect Checkout Merge Conflict', type: 'merge_conflict', targetId: 'conflict_checkout_01' },
-        ];
-      } else if (lower.includes('impact') || lower.includes('break') || lower.includes('schema') || lower.includes('database') || lower.includes('prisma')) {
-        respondingAgent = 'git_merge';
-        replyContent = `**[Git & Merge Intelligence Agent]**:
-Prisma Schema & Database Impact Topology:
+        console.log('[Chat] Got LLM response:', response);
 
-Modifying \`prisma/schema.prisma\` directly cascades to:
-- 4 API Route handlers (\`checkout.ts\`, \`webhooks.ts\`, \`products.ts\`, \`auth.ts\`)
-- 2 Vitest integration test suites (\`checkout.test.ts\`, \`stripeWebhook.test.ts\`)
-- PostgreSQL migration sequence in \`prisma/migrations/\``;
+        // Generate jump actions from RAG context
+        const jumpActions: JumpAction[] = ragContext.map(ctx => ({
+          label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
+          type: 'code' as const,
+          targetId: ctx.file,
+          line: ctx.lineStart,
+          description: `Relevance: ${Math.round(ctx.relevanceScore * 100)}%`,
+        }));
 
-        jumpActions = [
-          { label: 'Open Dependency Graph', type: 'impact_node', targetId: 'db_orders' },
-          { label: 'Open schema.prisma', type: 'code', targetId: 'prisma/schema.prisma', line: 1 },
-        ];
-      } else if (lower.includes('review') || lower.includes('audit') || lower.includes('findings') || lower.includes('agent')) {
-        respondingAgent = 'code_quality_arch';
-        replyContent = `**[Code Quality & Architecture Agent]**:
-5-Agent Engineering Review status:
-- 🛡️ Security Guardian: 1 Critical (JWT fallback secret)
-- ⚡ Performance Agent: 1 High (N+1 query loop on orders)
-- 🧪 Testing Agent: 1 Medium (Stripe webhook signature validation missing)
-- 🌿 Git & Merge Agent: 1 High (3-way branch conflict in checkout)
-- 🏛️ Code Quality Agent: 1 Medium (Dead code & duplicate pricing logic)`;
+        // Remove loading message and add AI response
+        setChatMessages((prev) => {
+          const withoutLoading = prev.filter(m => m.id !== loadingMsgId);
+          return [
+            ...withoutLoading,
+            {
+              id: `ast_${Date.now()}`,
+              sender: 'assistant' as const,
+              respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
+              content: response.content,
+              timestamp: MESSAGES.timestamps.justNow,
+              codeReferences,
+              jumpActions,
+            },
+          ];
+        });
 
-        jumpActions = [
-          { label: 'Inspect 5-Agent Review Panel', type: 'finding', targetId: 'issue_sec_01' },
-          { label: 'Play Multi-Agent Debate Audio', type: 'debate', targetId: 'issue_sec_01' },
-        ];
-      } else if (lower.includes('merge') || lower.includes('conflict') || lower.includes('branch') || lower.includes('drift')) {
-        respondingAgent = 'git_merge';
-        replyContent = `**[Git & Merge Intelligence Agent]**:
-Branch \`feat/stripe-elements-v3\` has **2 textual conflicts** and **2 semantic contract breaks** against \`main\`.
-- **Textual Conflict**: \`server/routes/checkout.ts:32\` (Idempotency parameter clash)
-- **Semantic Drift**: \`server/services/stripeService.ts\` renamed \`createPaymentIntent\` parameters without updating callers.`;
+        // Auto speech if enabled
+        if (voiceSettings?.autoPlayResponses) {
+          speakAgentBriefing(response.content.slice(0, 200), targetAgentId || AGENT_CONFIG.defaultAgentId);
+        }
+      } catch (error) {
+        console.error('[Chat] AI response failed:', error);
+        
+        // Fallback to hardcoded response if LLM fails
+        const respondingAgent: AgentId = targetAgentId || AGENT_CONFIG.defaultAgentId;
+        const ragContext = ragService.searchContext(content, 5);
+        
+        let fallbackContent = `I encountered an issue connecting to the AI service.\n\n`;
+        
+        if (ragContext.length > 0) {
+          fallbackContent += `However, I found ${ragContext.length} relevant code sections:\n\n`;
+          ragContext.forEach((ctx, idx) => {
+            fallbackContent += `${idx + 1}. **${ctx.file}** (lines ${ctx.lineStart}-${ctx.lineEnd})\n`;
+          });
+          fallbackContent += `\nClick the code references below to explore them.`;
+        } else {
+          fallbackContent += `**Error Details:**\n${error instanceof Error ? error.message : 'Unknown error'}\n\n`;
+          fallbackContent += `**Troubleshooting:**\n`;
+          fallbackContent += `1. Ensure Ollama is running: \`ollama list\` in terminal\n`;
+          fallbackContent += `2. Check if model is loaded: \`ollama run qwen2.5:3b\`\n`;
+          fallbackContent += `3. Or configure Gemini API key in .env.local\n\n`;
+          fallbackContent += `Try asking a simpler question while I check the connection.`;
+        }
 
-        jumpActions = [
-          { label: 'Open 3-Way Conflict Resolver', type: 'merge_conflict', targetId: 'conflict_checkout_01' },
-          { label: 'Inspect Semantic Drift Alerts', type: 'merge_conflict', targetId: 'conflict_checkout_01' },
-        ];
-      } else {
-        respondingAgent = 'orchestrator';
-        replyContent = `**[Review Orchestrator]**: Repository intelligence results for **"${content}"**:
+        const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
+          file: result.file,
+          lineStart: result.lineStart,
+          lineEnd: result.lineEnd,
+          snippet: result.content,
+        })) : undefined;
 
-- **Matched Source Files**: \`server/routes/checkout.ts\`, \`src/pages/Checkout.tsx\`, and \`prisma/schema.prisma\`.
-- **Active Codebase Health**: 5 multi-agent audit findings, 2 branch merge conflicts, and full 6-layer dependency topology mapped.`;
+        const jumpActions: JumpAction[] = ragContext.map(ctx => ({
+          label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
+          type: 'code' as const,
+          targetId: ctx.file,
+          line: ctx.lineStart,
+        }));
 
-        jumpActions = [
-          { label: 'Inspect 5-Agent Review', type: 'finding', targetId: 'issue_sec_01' },
-          { label: 'Explore Code in Studio', type: 'code', targetId: 'src/pages/Checkout.tsx', line: 1 },
-          { label: 'View Dependency Graph', type: 'impact_node', targetId: 'api_create_intent' },
-        ];
+        setChatMessages((prev) => {
+          const withoutLoading = prev.filter(m => m.id !== loadingMsgId);
+          return [
+            ...withoutLoading,
+            {
+              id: `ast_${Date.now()}`,
+              sender: 'assistant' as const,
+              respondingAgentId: respondingAgent,
+              content: fallbackContent,
+              timestamp: MESSAGES.timestamps.justNow,
+              codeReferences,
+              jumpActions,
+            },
+          ];
+        });
       }
-
-      const assistantMsg: ChatMessage = {
-        id: `ast_${Date.now()}`,
-        sender: 'assistant',
-        respondingAgentId: respondingAgent,
-        content: replyContent,
-        timestamp: 'Just now',
-        codeReferences,
-        jumpActions,
-      };
-
-      setChatMessages((prev) => [...prev, assistantMsg]);
+    })();
+  };
+            id: `ast_${Date.now()}`,
+            sender: 'assistant' as const,
+            respondingAgentId: targetAgentId || AGENT_CONFIG.defaultAgentId,
+            content: response.content,
+            timestamp: MESSAGES.timestamps.justNow,
+            codeReferences,
+            jumpActions,
+          },
+        ];
+      });
 
       // Auto speech if enabled
-      if (voiceSettings.autoPlayResponses) {
-        speakAgentBriefing(replyContent.slice(0, 200), respondingAgent);
+      if (voiceSettings?.autoPlayResponses) {
+        speakAgentBriefing(response.content.slice(0, 200), targetAgentId || AGENT_CONFIG.defaultAgentId);
       }
-    }, 350);
+    } catch (error) {
+      console.error('[Chat] AI response failed:', error);
+      
+      // Fallback to hardcoded response if LLM fails
+      const respondingAgent: AgentId = targetAgentId || AGENT_CONFIG.defaultAgentId;
+      const ragContext = ragService.searchContext(content, 5);
+      
+      let fallbackContent = `I encountered an issue connecting to the AI service. `;
+      
+      if (ragContext.length > 0) {
+        fallbackContent += `However, I found ${ragContext.length} relevant code sections:\n\n`;
+        ragContext.forEach((ctx, idx) => {
+          fallbackContent += `${idx + 1}. **${ctx.file}** (lines ${ctx.lineStart}-${ctx.lineEnd})\n`;
+        });
+        fallbackContent += `\nClick the code references above to explore them.`;
+      } else {
+        fallbackContent += `Please ensure Ollama is running or configure your Gemini API key in the .env.local file.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+
+      const codeReferences = ragContext.length > 0 ? ragContext.map(result => ({
+        file: result.file,
+        lineStart: result.lineStart,
+        lineEnd: result.lineEnd,
+        snippet: result.content,
+      })) : undefined;
+
+      const jumpActions: JumpAction[] = ragContext.map(ctx => ({
+        label: `View ${ctx.file.split('/').pop()}:${ctx.lineStart}`,
+        type: 'code' as const,
+        targetId: ctx.file,
+        line: ctx.lineStart,
+      }));
+
+      setChatMessages((prev) => {
+        const withoutLoading = prev.filter(m => m.id !== loadingMsg.id);
+        return [
+          ...withoutLoading,
+          {
+            id: `ast_${Date.now()}`,
+            sender: 'assistant' as const,
+            respondingAgentId: respondingAgent,
+            content: fallbackContent,
+            timestamp: MESSAGES.timestamps.justNow,
+            codeReferences,
+            jumpActions,
+          },
+        ];
+      });
+    }
   };
 
   const clearChat = () => {
@@ -634,6 +859,8 @@ Branch \`feat/stripe-elements-v3\` has **2 textual conflicts** and **2 semantic 
     setIsConnectModalOpen,
     isSettingsModalOpen,
     setIsSettingsModalOpen,
+    isLLMSettingsModalOpen,
+    setIsLLMSettingsModalOpen,
     isVoiceSettingsModalOpen,
     setIsVoiceSettingsModalOpen,
     isRightPanelOpen,
@@ -651,6 +878,7 @@ Branch \`feat/stripe-elements-v3\` has **2 textual conflicts** and **2 semantic 
     startVoiceInput,
     stopVoiceInput,
 
+    reviewState,
     reviewFindings,
     orchestrationSummary,
     selectedFinding,
@@ -669,11 +897,14 @@ Branch \`feat/stripe-elements-v3\` has **2 textual conflicts** and **2 semantic 
     applyFix,
     dismissFinding,
 
+    comparisonState,
     branchComparison,
     selectedConflict,
     setSelectedConflict,
     selectedSemanticAlert,
     setSelectedSemanticAlert,
+    compareBranches,
+    resetComparison,
     resolveConflictBlock,
 
     selectedImpactNodeId,

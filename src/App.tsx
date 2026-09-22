@@ -12,9 +12,11 @@ import { MergeConflictView } from './components/merge/MergeConflictView';
 import { ImpactGraphView } from './components/impact/ImpactGraphView';
 import { GitHistoryView } from './components/git/GitHistoryView';
 import { RepoChatView } from './components/chat/RepoChatView';
+import { RepoCopilotView } from './components/chat/RepoCopilotView';
 import { ConnectRepoModal } from './components/modals/ConnectRepoModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { VoiceSettingsModal } from './components/modals/VoiceSettingsModal';
+import { LLMSettingsModal } from './components/modals/LLMSettingsModal';
 
 const WorkspaceContent: React.FC = () => {
   const { activeView } = useRepoStore();
@@ -36,12 +38,16 @@ const WorkspaceContent: React.FC = () => {
       return <GitHistoryView />;
     case 'chat':
       return <RepoChatView />;
+    case 'copilot':
+      return <RepoCopilotView />;
     default:
       return <RepoOverview />;
   }
 };
 
 const AppShell: React.FC = () => {
+  const { isLLMSettingsModalOpen, setIsLLMSettingsModalOpen } = useRepoStore();
+  
   return (
     <div className="flex flex-col h-screen w-screen bg-[#0d1117] text-slate-100 overflow-hidden font-sans select-none">
       {/* Top Navigation */}
@@ -66,6 +72,7 @@ const AppShell: React.FC = () => {
       <ConnectRepoModal />
       <SettingsModal />
       <VoiceSettingsModal />
+      <LLMSettingsModal isOpen={isLLMSettingsModalOpen} onClose={() => setIsLLMSettingsModalOpen(false)} />
     </div>
   );
 };

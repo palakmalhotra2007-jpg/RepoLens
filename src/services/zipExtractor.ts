@@ -10,68 +10,94 @@ export async function parseZipArchive(file: File): Promise<RepositoryData> {
   const rootNodes: FileNode[] = [];
 
   const entries = Object.entries(loadedZip.files);
-
-  for (const [relativePath, zipEntry] of entries) {
-    // Ignore macOS junk and git metadata
-    if (relativePath.includes('__MACOSX') || relativePath.includes('.DS_Store') || relativePath.startsWith('.git/')) {
-      continue;
+  
+  // Filter out unnecessary files upfront for better performance
+  const relevantEntries = entries.filter(([relativePath]) => {
+    // Ignore macOS junk, git metadata, node_modules, and other large folders
+    if (
+      relativePath.includes('__MACOSX') || 
+      relativePath.includes('.DS_Store') || 
+      relativePath.startsWith('.git/') ||
+      relativePath.includes('node_modules/') ||
+      relativePath.includes('.next/') ||
+      relativePath.includes('dist/') ||
+      relativePath.includes('build/')
+    ) {
+      return false;
     }
+    return true;
+  });
 
-    const segments = relativePath.split('/').filter(Boolean);
-    if (!segments.length) continue;
+  // Process entries in batches to avoid blocking the UI thread
+  const BATCH_SIZE = 50;
+  for (let batchStart = 0; batchStart < relevantEntries.length; batchStart += BATCH_SIZE) {
+    const batch = relevantEntries.slice(batchStart, batchStart + BATCH_SIZE);
+    
+    // Allow UI to update between batches
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    for (const [relativePath, zipEntry] of batch) {
+      const segments = relativePath.split('/').filter(Boolean);
+      if (!segments.length) continue;
 
-    let currentPath = '';
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i];
-      const isLast = i === segments.length - 1;
-      const isDir = !isLast || zipEntry.dir;
-      const parentPath = currentPath;
-      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      let currentPath = '';
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        const isLast = i === segments.length - 1;
+        const isDir = !isLast || zipEntry.dir;
+        const parentPath = currentPath;
+        currentPath = currentPath ? `${currentPath}/${segment}` : segment;
 
-      if (!fileMap.has(currentPath)) {
-        let content = '';
-        let symbols = undefined;
-        let language = 'plaintext';
+        if (!fileMap.has(currentPath)) {
+          let content = '';
+          let symbols = undefined;
+          let language = 'plaintext';
 
-        if (!isDir) {
-          try {
-            content = await zipEntry.async('text');
-            const ext = segment.split('.').pop()?.toLowerCase();
-            if (ext === 'ts' || ext === 'tsx') language = 'typescript';
-            else if (ext === 'js' || ext === 'jsx') language = 'javascript';
-            else if (ext === 'json') language = 'json';
-            else if (ext === 'md') language = 'markdown';
-            else if (ext === 'prisma') language = 'prisma';
-            else if (ext === 'css') language = 'css';
-            else if (ext === 'html') language = 'html';
-            else if (ext === 'py') language = 'python';
+          if (!isDir) {
+            try {
+              content = await zipEntry.async('text');
+              const ext = segment.split('.').pop()?.toLowerCase();
+              
+              // Determine language
+              if (ext === 'ts' || ext === 'tsx') language = 'typescript';
+              else if (ext === 'js' || ext === 'jsx') language = 'javascript';
+              else if (ext === 'json') language = 'json';
+              else if (ext === 'md') language = 'markdown';
+              else if (ext === 'prisma') language = 'prisma';
+              else if (ext === 'css') language = 'css';
+              else if (ext === 'html') language = 'html';
+              else if (ext === 'py') language = 'python';
 
-            symbols = extractCodeSymbols(segment, content);
-          } catch (e) {
-            content = '/* Binary or unreadable content */';
+              // Only extract symbols for code files (skip large JSON, etc.)
+              if (['typescript', 'javascript', 'python'].includes(language) && content.length < 500000) {
+                symbols = extractCodeSymbols(segment, content);
+              }
+            } catch (e) {
+              content = '/* Binary or unreadable content */';
+            }
           }
-        }
 
-        const node: FileNode = {
-          id: currentPath,
-          name: segment,
-          path: currentPath,
-          type: isDir ? 'directory' : 'file',
-          language,
-          content: isDir ? undefined : content,
-          children: isDir ? [] : undefined,
-          symbols,
-          isOpen: i === 0, // open top-level folders
-        };
+          const node: FileNode = {
+            id: currentPath,
+            name: segment,
+            path: currentPath,
+            type: isDir ? 'directory' : 'file',
+            language,
+            content: isDir ? undefined : content,
+            children: isDir ? [] : undefined,
+            symbols,
+            isOpen: i === 0, // open top-level folders
+          };
 
-        fileMap.set(currentPath, node);
+          fileMap.set(currentPath, node);
 
-        if (!parentPath) {
-          rootNodes.push(node);
-        } else {
-          const parent = fileMap.get(parentPath);
-          if (parent && parent.children) {
-            parent.children.push(node);
+          if (!parentPath) {
+            rootNodes.push(node);
+          } else {
+            const parent = fileMap.get(parentPath);
+            if (parent && parent.children) {
+              parent.children.push(node);
+            }
           }
         }
       }

@@ -1,4 +1,5 @@
 import { RepositoryData, FileNode, HotspotItem, DeadCodeItem, DuplicateCodeItem, CodebaseMetrics } from '../types/repository';
+import { APP_CONFIG } from '../config/constants';
 
 export const mockShopFlowHotspots: HotspotItem[] = [
   {
@@ -517,7 +518,7 @@ export function usePayment() {
             ],
             content: `// Client-side API abstraction with auth interceptors
 export const apiClient = {
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000',
+  baseURL: import.meta.env.VITE_API_URL || '${APP_CONFIG.dev.serverUrl}',
   
   async get(endpoint: string, options: RequestInit = {}) {
     return this.request(endpoint, { ...options, method: 'GET' });
@@ -711,9 +712,9 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { redisClient } from './services/redisCache';
 
 export const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || ${APP_CONFIG.dev.serverPort};
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || '${APP_CONFIG.dev.clientOrigin}', credentials: true }));
 
 // Note: Stripe Webhooks require raw body for HMAC signature verification
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), webhooksRouter);
@@ -742,7 +743,7 @@ app.get('/health', async (req, res) => {
 
 export const startServer = () => {
   return app.listen(PORT, () => {
-    console.log(\`⚡ ShopFlow Backend service listening on http://localhost:\${PORT}\`);
+    console.log(\`⚡ ShopFlow Backend service listening on ${APP_CONFIG.dev.serverUrl.replace('4000', '\${PORT}')}\`);
   });
 };
 
@@ -1213,9 +1214,9 @@ export function authGuard(req: Request, res: Response, next: NextFunction) {
 const ipHits = new Map<string, { count: number; resetTime: number }>();
 
 export function rateLimiter(req: Request, res: Response, next: NextFunction) {
-  const ip = req.ip || '127.0.0.1';
+  const ip = req.ip || (import.meta.env.VITE_DEFAULT_IP || '127.0.0.1');
   const now = Date.now();
-  const windowMs = 60 * 1000;
+  const windowMs = ${APP_CONFIG.security.rateLimit.windowMs};
   const maxRequests = 120;
 
   const current = ipHits.get(ip);

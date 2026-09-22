@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -12,10 +12,6 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import {
-  initialImpactNodes,
-  initialImpactEdges,
-} from '../../data/mockImpactGraph';
-import {
   DbNode,
   ServiceNode,
   ApiNode,
@@ -26,6 +22,7 @@ import {
 import { BlastRadiusPanel } from './BlastRadiusPanel';
 import { ChangeAssistant } from './ChangeAssistant';
 import { useRepoStore } from '../../store/useRepoStore';
+import { initialImpactNodes, initialImpactEdges } from '../../data/mockImpactGraph';
 import {
   Network,
   Sparkles,
@@ -45,10 +42,24 @@ const nodeTypes = {
 };
 
 export const ImpactGraphView: React.FC = () => {
-  const { selectedImpactNodeId, setSelectedImpactNodeId } = useRepoStore();
+  const { selectedImpactNodeId, setSelectedImpactNodeId, repo } = useRepoStore();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialImpactNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialImpactEdges);
   const [viewMode, setViewMode] = useState<'graph' | 'assistant'>('graph');
+
+  // Load graph data when component mounts or repo changes
+  useEffect(() => {
+    // For now, use mock data for all repositories
+    // TODO: Generate real dependency graph from actual repository analysis
+    if (repo.isDemo) {
+      setNodes(initialImpactNodes);
+      setEdges(initialImpactEdges);
+    } else {
+      // For real repositories, show empty state or generate from code
+      setNodes(initialImpactNodes); // Using mock for now
+      setEdges(initialImpactEdges);
+    }
+  }, [repo.id, setNodes, setEdges]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRepoStore } from '../../store/useRepoStore';
-import { reviewAgents } from '../../data/mockReviewAgents';
+import { reviewAgents } from '../../config/agents';
 import { voiceEngine } from '../../services/voiceService';
 import { AgentId } from '../../types/agents';
 import {
