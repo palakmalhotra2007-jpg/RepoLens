@@ -173,7 +173,7 @@ export const AgentDebateView: React.FC = () => {
             {finding.debateStages?.map((stage, idx) => {
               const agent = reviewAgents.find((a) => a.id === stage.agentId) || {
                 name: stage.agentName,
-                avatar: '🤖',
+                avatar: 'AG',
                 color: '#6366f1',
                 role: 'Specialized Agent',
               };

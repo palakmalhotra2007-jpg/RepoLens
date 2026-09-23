@@ -250,11 +250,17 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
   
   // Parse dependencies from package.json if exists
   const dependencies: import('../types/repository').DependencyItem[] = [];
+  const frameworks: import('../types/repository').RepositoryData['frameworks'] = [];
   const packageJsonNode = fileMap.get('package.json');
   if (packageJsonNode) {
     try {
       const packageContent = await fetchRawFileContent(`${owner}/${repo}`, defaultBranch, 'package.json');
       const packageJson = JSON.parse(packageContent);
+      
+      const allDeps = {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      };
       
       if (packageJson.dependencies) {
         Object.entries(packageJson.dependencies).forEach(([name, version]) => {
@@ -266,6 +272,134 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
           dependencies.push({ name, version: version as string, type: 'development' });
         });
       }
+      
+      // Detect database and backend frameworks from dependencies
+      if (allDeps['@supabase/supabase-js']) {
+        frameworks.push({
+          name: 'Supabase',
+          category: 'database',
+          version: allDeps['@supabase/supabase-js'] as string,
+        });
+      }
+      if (allDeps['firebase'] || allDeps['@firebase/app']) {
+        frameworks.push({
+          name: 'Firebase',
+          category: 'database',
+          version: (allDeps['firebase'] || allDeps['@firebase/app']) as string,
+        });
+      }
+      if (allDeps['mongodb'] || allDeps['mongoose']) {
+        frameworks.push({
+          name: 'MongoDB',
+          category: 'database',
+          version: (allDeps['mongodb'] || allDeps['mongoose']) as string,
+        });
+      }
+      if (allDeps['pg'] || allDeps['postgres']) {
+        frameworks.push({
+          name: 'PostgreSQL',
+          category: 'database',
+          version: (allDeps['pg'] || allDeps['postgres']) as string,
+        });
+      }
+      if (allDeps['mysql'] || allDeps['mysql2']) {
+        frameworks.push({
+          name: 'MySQL',
+          category: 'database',
+          version: (allDeps['mysql'] || allDeps['mysql2']) as string,
+        });
+      }
+      if (allDeps['prisma'] || allDeps['@prisma/client']) {
+        frameworks.push({
+          name: 'Prisma ORM',
+          category: 'database',
+          version: (allDeps['prisma'] || allDeps['@prisma/client']) as string,
+        });
+      }
+      if (allDeps['typeorm']) {
+        frameworks.push({
+          name: 'TypeORM',
+          category: 'database',
+          version: allDeps['typeorm'] as string,
+        });
+      }
+      if (allDeps['redis']) {
+        frameworks.push({
+          name: 'Redis',
+          category: 'caching',
+          version: allDeps['redis'] as string,
+        });
+      }
+      
+      // Detect frontend frameworks
+      if (allDeps['react']) {
+        frameworks.push({
+          name: 'React',
+          category: 'frontend',
+          version: allDeps['react'] as string,
+        });
+      }
+      if (allDeps['next']) {
+        frameworks.push({
+          name: 'Next.js',
+          category: 'frontend',
+          version: allDeps['next'] as string,
+        });
+      }
+      if (allDeps['vue']) {
+        frameworks.push({
+          name: 'Vue',
+          category: 'frontend',
+          version: allDeps['vue'] as string,
+        });
+      }
+      if (allDeps['@angular/core']) {
+        frameworks.push({
+          name: 'Angular',
+          category: 'frontend',
+          version: allDeps['@angular/core'] as string,
+        });
+      }
+      
+      // Detect backend frameworks
+      if (allDeps['express']) {
+        frameworks.push({
+          name: 'Express',
+          category: 'backend',
+          version: allDeps['express'] as string,
+        });
+      }
+      if (allDeps['fastify']) {
+        frameworks.push({
+          name: 'Fastify',
+          category: 'backend',
+          version: allDeps['fastify'] as string,
+        });
+      }
+      if (allDeps['@nestjs/core']) {
+        frameworks.push({
+          name: 'NestJS',
+          category: 'backend',
+          version: allDeps['@nestjs/core'] as string,
+        });
+      }
+      
+      // Detect testing frameworks
+      if (allDeps['jest']) {
+        frameworks.push({
+          name: 'Jest',
+          category: 'testing',
+          version: allDeps['jest'] as string,
+        });
+      }
+      if (allDeps['vitest']) {
+        frameworks.push({
+          name: 'Vitest',
+          category: 'testing',
+          version: allDeps['vitest'] as string,
+        });
+      }
+      
     } catch (e) {
       console.warn('Failed to parse package.json:', e);
     }
@@ -342,7 +476,7 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
     deadCodeItems: [],
     duplicateCodeItems: [],
     languages: languages.length > 0 ? languages : [{ name: meta.language || 'Unknown', percentage: 100, color: '#3178c6', files: treeItems.length }],
-    frameworks: [], // Will be detected from package.json or other config files
+    frameworks: frameworks,
     architecture: {
       pattern: meta.language ? `${meta.language} Repository` : 'Open Source Repository',
       description: meta.description || `Repository ${owner}/${repo} ${branches.length > 1 ? `with ${branches.length} branches` : 'on a single branch'}. ${hasTests ? 'Includes test suite. ' : ''}${hasReadme ? 'Documented with README. ' : ''}${recentlyUpdated ? 'Recently updated.' : 'Last updated ' + new Date(meta.pushed_at).toLocaleDateString()}.`,

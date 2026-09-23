@@ -59,9 +59,9 @@ export class LLMAnalyzer {
       this.runAgentWithTimeout(agentId, context, 12000)
         .then((findings) => {
           completedCount++;
-          const progress = 25 + Math.round((completedCount / agents.length) * 45); // 25% -> 70%
+          const progress = 25 + Math.round((completedCount / agents.length) * 45);
           const agentName = this.getAgentName(agentId);
-          onProgress?.(`✓ ${agentName} analyzed (${findings.length} findings)`, progress);
+          onProgress?.(`${agentName} analyzed (${findings.length} findings)`, progress);
           return findings;
         })
         .catch((error) => {
@@ -83,7 +83,7 @@ export class LLMAnalyzer {
     }
 
     // 2. Perform Real Inter-Agent Debate on Top Findings
-    onProgress?.('⚖️ Conducting cross-agent debate & challenge protocol...', 75);
+    onProgress?.('Conducting cross-agent debate & challenge protocol...', 75);
 
     const debatedFindings: ReviewFinding[] = [];
     const topFindingsToDebate = allFindings.slice(0, 2); // Fast real debate for top 2 findings
@@ -91,7 +91,7 @@ export class LLMAnalyzer {
 
     for (let i = 0; i < topFindingsToDebate.length; i++) {
       const f = topFindingsToDebate[i];
-      onProgress?.(`⚖️ Debating finding ${i + 1}/${topFindingsToDebate.length}: "${f.title.slice(0, 30)}..."`, 75 + (i + 1) * 8);
+      onProgress?.(`Debating finding ${i + 1}/${topFindingsToDebate.length}: "${f.title.slice(0, 30)}..."`, 75 + (i + 1) * 8);
       try {
         const enrichedFinding = await this.runDebateWithTimeout(f, context, 8000);
         debatedFindings.push(enrichedFinding);
@@ -108,7 +108,7 @@ export class LLMAnalyzer {
     ];
 
     // 3. Central Orchestrator Synthesizes Final Results & Readiness Verdict
-    onProgress?.('👑 Central Orchestrator synthesizing consensus and verdict...', 92);
+    onProgress?.('Central Orchestrator synthesizing consensus and verdict...', 92);
     const summary = await this.generateOrchestrationSummary(repo, finalFindings, context);
 
     onProgress?.('✅ 5-Agent Review and Debate complete!', 100);

@@ -13,7 +13,7 @@ const allAgents: AgentProfile[] = [
     name: 'Code Quality & Architecture Agent',
     shortName: 'Architecture',
     role: 'System Modularity, SOLID, Dead Code & Hotspot Auditor',
-    avatar: '🏛️',
+    avatar: 'AR',
     color: '#8b5cf6',
     accentBg: 'rgba(139, 92, 246, 0.12)',
     badgeBorder: '#8b5cf6',
@@ -37,7 +37,7 @@ const allAgents: AgentProfile[] = [
     name: 'Security Guardian Agent',
     shortName: 'Security',
     role: 'Vulnerabilities, Auth, Secrets, & Threat Modeler',
-    avatar: '🛡️',
+    avatar: 'SE',
     color: '#ef4444',
     accentBg: 'rgba(239, 68, 68, 0.12)',
     badgeBorder: '#ef4444',
@@ -61,7 +61,7 @@ const allAgents: AgentProfile[] = [
     name: 'Performance & Database Agent',
     shortName: 'Performance',
     role: 'Query Optimizer, Index Coverage & Latency Analyst',
-    avatar: '⚡',
+    avatar: 'PE',
     color: '#eab308',
     accentBg: 'rgba(234, 179, 8, 0.12)',
     badgeBorder: '#eab308',
@@ -81,11 +81,35 @@ const allAgents: AgentProfile[] = [
     }
   },
   {
+    id: 'git_merge',
+    name: 'Version Control & Integration Agent',
+    shortName: 'Integration',
+    role: 'Branch Conflict, Schema Drift & Integration Reviewer',
+    avatar: 'IN',
+    color: '#10b981',
+    accentBg: 'rgba(16, 185, 129, 0.12)',
+    badgeBorder: '#10b981',
+    description: 'Detects merge conflicts, semantic contract breaks, schema migration drift, and integration issues across branches.',
+    focusAreas: [
+      'Semantic & Textual Merge Collisions',
+      'Database Schema Migration Drift',
+      'Breaking API Contract Changes',
+      'Dependency Version Conflicts',
+      'Branch Integration Risks'
+    ],
+    voicePersona: {
+      pitch: 0.95,
+      rate: 1.0,
+      tone: 'Pragmatic, integration-focused engineer',
+      sampleIntro: "Version Control and Integration Agent active. Analyzing branch conflicts, schema drift, and integration risks.",
+    }
+  },
+  {
     id: 'testing_reliability',
     name: 'Testing & Reliability Agent',
     shortName: 'Testing',
     role: 'Chaos, Resilience, & Edge-Case Validator',
-    avatar: '🧪',
+    avatar: 'TE',
     color: '#06b6d4',
     accentBg: 'rgba(6, 182, 212, 0.12)',
     badgeBorder: '#06b6d4',
@@ -102,30 +126,6 @@ const allAgents: AgentProfile[] = [
       rate: 1.05,
       tone: 'Precise, cautious QA reliability engineer',
       sampleIntro: "Testing and Reliability Agent reporting. Auditing edge cases, failure fallbacks, and test coverage.",
-    }
-  },
-  {
-    id: 'git_merge',
-    name: 'Git & Merge Intelligence Agent',
-    shortName: 'Git Intel',
-    role: 'Branch Conflict, Schema Drift & Intent Reviewer',
-    avatar: '🌿',
-    color: '#10b981',
-    accentBg: 'rgba(16, 185, 129, 0.12)',
-    badgeBorder: '#10b981',
-    description: 'Detects 3-way merge conflicts, semantic contract breaks, Prisma migration divergence, and unaligned branch intent.',
-    focusAreas: [
-      'Semantic & Textual Merge Collisions',
-      'Prisma Schema Migration Drift',
-      'Breaking API Contract Changes',
-      'Dependency Version Conflicts',
-      'Divergent Branch Intent'
-    ],
-    voicePersona: {
-      pitch: 0.95,
-      rate: 1.0,
-      tone: 'Pragmatic, branch-aware release engineer',
-      sampleIntro: "Git and Merge Intelligence Agent active. Scanning branch drift, merge conflicts, and semantic contract breaks.",
     }
   },
   {

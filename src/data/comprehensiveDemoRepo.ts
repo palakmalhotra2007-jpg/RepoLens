@@ -1038,10 +1038,10 @@ A modern, full-stack task management application built with React, Express, and 
 - 📊 **Dashboard** - Visual metrics and task overview
 - ✅ **Task Management** - Create, update, and organize tasks
 - 🔐 **Authentication** - Secure JWT-based auth system
-- 🎯 **Priority Levels** - Categorize tasks by urgency
-- 📅 **Due Dates** - Track deadlines and overdue tasks
-- 👥 **User Management** - Multi-user support with roles
-- 🧪 **Testing** - Comprehensive test coverage
+- Priority Levels - Categorize tasks by urgency
+- Due Dates - Track deadlines and overdue tasks
+- User Management - Multi-user support with roles
+- Testing - Comprehensive test coverage
 
 ## Tech Stack
 

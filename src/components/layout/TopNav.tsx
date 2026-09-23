@@ -116,7 +116,7 @@ export const TopNav: React.FC = () => {
               className="ml-1 text-text-secondary hover:text-text-primary"
               title="Stop audio"
             >
-              ✕
+              ×
             </button>
           </div>
         )}

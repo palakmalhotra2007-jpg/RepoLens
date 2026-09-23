@@ -141,7 +141,34 @@ export const RepoOverview: React.FC = () => {
                   <p className="text-[13px] text-text-secondary leading-relaxed">
                     {repo.architecture.description}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  {/* Tech Stack / Frameworks */}
+                  {repo.frameworks.length > 0 && (
+                    <div className="pt-4 border-t border-border-default">
+                      <h4 className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] mb-3">
+                        Technology Stack
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {repo.frameworks.map((fw, idx) => (
+                          <div
+                            key={idx}
+                            className="px-3 py-2 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center gap-2"
+                          >
+                            <span className="text-lg">{fw.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium text-text-primary truncate">{fw.name}</div>
+                              <div className="text-[10px] text-text-tertiary font-mono">{fw.version}</div>
+                            </div>
+                            <Badge variant="neutral" className="text-[9px] uppercase">
+                              {fw.category}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border-default">
                     {repo.architecture.components.map((comp, idx) => (
                       <div
                         key={idx}

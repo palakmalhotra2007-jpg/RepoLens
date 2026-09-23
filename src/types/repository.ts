@@ -122,7 +122,7 @@ export interface RepositoryData {
     name: string;
     category: 'frontend' | 'backend' | 'database' | 'testing' | 'devops' | 'payments' | 'caching';
     version: string;
-    icon: string;
+    icon?: string;
   }[];
   architecture: ArchitectureInfo;
   dependencies: DependencyItem[];

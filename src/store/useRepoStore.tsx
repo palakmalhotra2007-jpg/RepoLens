@@ -669,8 +669,7 @@ What would you like to explore or analyze today?`,
       (err) => {
         setIsRecordingVoice(false);
         console.error('[Voice] Microphone input error:', err);
-        // Show user-friendly error with troubleshooting tips
-        alert(`🎤 Voice Input Error\n\n${err}\n\nTips:\n• Make sure your browser has microphone permission\n• Check your microphone is connected and working\n• Try using Chrome, Edge, or Safari for best support`);
+        alert(`Voice Input Error\n\n${err}\n\nTips:\n• Make sure your browser has microphone permission\n• Check your microphone is connected and working\n• Try using Chrome, Edge, or Safari for best support`);
       },
       () => {
         setIsRecordingVoice(false);

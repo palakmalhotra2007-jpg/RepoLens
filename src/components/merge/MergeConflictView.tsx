@@ -450,7 +450,7 @@ export const MergeConflictView: React.FC = () => {
                 <Sparkles strokeWidth={1.5} className="w-3.5 h-3.5" />
                 <span>
                   {currentConflict.resolutionStatus === 'resolved_ai'
-                    ? '✓ Solution Applied'
+                    ? 'Solution Applied'
                     : 'Apply Suggested Resolution'}
                 </span>
               </Button>

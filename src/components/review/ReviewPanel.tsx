@@ -285,7 +285,7 @@ export const ReviewPanel: React.FC = () => {
                 </div>
 
                 <div className="pt-2 border-t border-border-default flex items-center justify-between text-[11px] font-mono text-text-tertiary">
-                  <span>{isSelected ? '✓ Filter Active' : 'Filter'}</span>
+                  <span>{isSelected ? 'Filter Active' : 'Filter'}</span>
                 </div>
               </Card>
             );

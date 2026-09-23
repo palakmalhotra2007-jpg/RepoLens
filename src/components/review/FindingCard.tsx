@@ -34,7 +34,7 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, isSelected, o
 
   const primaryAgent = reviewAgents.find((a) => a.id === finding.primaryAgent) || {
     name: 'Specialist Agent',
-    avatar: '🤖',
+    avatar: 'AG',
     shortName: 'Agent',
   };
 

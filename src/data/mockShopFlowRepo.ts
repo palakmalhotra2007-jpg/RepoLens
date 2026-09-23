@@ -743,7 +743,7 @@ app.get('/health', async (req, res) => {
 
 export const startServer = () => {
   return app.listen(PORT, () => {
-    console.log(\`⚡ ShopFlow Backend service listening on ${APP_CONFIG.dev.serverUrl.replace('4000', '\${PORT}')}\`);
+    console.log(\`ShopFlow Backend service listening on \${APP_CONFIG.dev.serverUrl.replace('4000', '\${PORT}')}\`);
   });
 };
 
@@ -881,7 +881,7 @@ webhooksRouter.post('/', async (req: Request, res: Response) => {
   try {
     event = stripeService.constructEvent(req.body, signature, webhookSecret);
   } catch (err: any) {
-    console.error(\`⚠️ Webhook signature verification failed: \${err.message}\`);
+    console.error(\`Webhook signature verification failed: \${err.message}\`);
     return res.status(400).send(\`Webhook Error: \${err.message}\`);
   }
 

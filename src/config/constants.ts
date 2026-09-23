@@ -109,6 +109,6 @@ export const AGENT_CONFIG = {
   orchestrator: {
     name: import.meta.env.VITE_ORCHESTRATOR_NAME || 'Review Orchestrator',
     shortName: import.meta.env.VITE_ORCHESTRATOR_SHORT_NAME || 'Orchestrator',
-    avatar: import.meta.env.VITE_ORCHESTRATOR_AVATAR || '👑',
+    avatar: import.meta.env.VITE_ORCHESTRATOR_AVATAR || 'OR',
   },
 } as const;
