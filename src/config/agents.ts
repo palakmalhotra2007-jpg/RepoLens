@@ -107,7 +107,7 @@ const allAgents: AgentProfile[] = [
   {
     id: 'git_merge',
     name: 'Git & Merge Intelligence Agent',
-    shortName: 'Git Intelligence',
+    shortName: 'Git Intel',
     role: 'Branch Conflict, Schema Drift & Intent Reviewer',
     avatar: '🌿',
     color: '#10b981',

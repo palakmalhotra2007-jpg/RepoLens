@@ -65,9 +65,9 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
     '#4C9A6A';
 
   return (
-    <div className="w-80 lg:w-96 bg-bg-surface border-l border-border-default flex flex-col h-full overflow-y-auto p-4 space-y-4 text-xs select-none">
+    <div className="w-80 lg:w-96 bg-bg-surface border-l border-[#2d3340] flex flex-col h-full overflow-y-auto p-4 space-y-4 text-xs select-none">
       {/* Target Node Title */}
-      <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-3">
+      <div className="p-4 rounded-[6px] bg-[#1a1f26] border border-[#2d3340] space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-[11px] uppercase font-medium tracking-[0.04em] text-text-tertiary">
             Selected Target Node
@@ -87,7 +87,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
             <span className="text-text-secondary">Calculated Blast Radius</span>
             <span className="text-text-primary font-semibold">{activeRadius.riskScore} / 100</span>
           </div>
-          <div className="w-full h-1.5 bg-bg-surface rounded-[4px] border border-border-default overflow-hidden">
+          <div className="w-full h-1.5 bg-bg-surface rounded-[4px] border border-[#2d3340] overflow-hidden">
             <div
               className="h-full rounded-[4px] transition-all duration-300"
               style={{
@@ -104,7 +104,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
         <span className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] flex items-center gap-1.5">
           <ShieldAlert strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" /> "What breaks if I change this?"
         </span>
-        <p className="text-text-secondary leading-relaxed bg-bg-surface-2 p-3.5 rounded-[6px] border border-border-default text-[13px]">
+        <p className="text-text-secondary leading-relaxed bg-[#1a1f26] p-3.5 rounded-[6px] border border-[#2d3340] text-[13px]">
           {activeRadius.impactSummary}
         </p>
       </div>
@@ -120,7 +120,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
               <button
                 key={idx}
                 onClick={() => selectFileByPath(file)}
-                className="w-full text-left p-2.5 rounded-[6px] bg-bg-surface-2 hover:bg-[#262B31] border border-border-default text-text-primary font-mono text-[11px] flex items-center justify-between group transition-colors"
+                className="w-full text-left p-2.5 rounded-[6px] bg-[#1a1f26] hover:bg-[#262B31] border border-[#2d3340] text-text-primary font-mono text-[11px] flex items-center justify-between group transition-colors"
               >
                 <span className="truncate text-text-primary">{file}</span>
                 <ArrowRight strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary group-hover:text-text-primary transition-colors flex-shrink-0" />
@@ -140,7 +140,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
             {activeRadius.affectedRoutes.map((item, idx) => (
               <span
                 key={idx}
-                className="px-2 py-0.5 rounded-[4px] bg-bg-surface-2 text-text-secondary border border-border-default text-[10px] font-mono"
+                className="px-2 py-0.5 rounded-[4px] bg-[#1a1f26] text-text-secondary border border-[#2d3340] text-[10px] font-mono"
               >
                 {item}
               </span>
@@ -150,7 +150,7 @@ export const BlastRadiusPanel: React.FC<BlastRadiusPanelProps> = ({
       )}
 
       {/* Suggested Validation Steps */}
-      <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-2">
+      <div className="p-3.5 rounded-[6px] bg-[#1a1f26] border border-[#2d3340] space-y-2">
         <span className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] flex items-center gap-1.5">
           <Terminal strokeWidth={1.5} className="w-3.5 h-3.5 text-text-secondary" /> Suggested Safe Validation Steps
         </span>

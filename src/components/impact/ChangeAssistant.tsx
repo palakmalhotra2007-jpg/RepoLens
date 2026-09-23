@@ -34,7 +34,7 @@ export const ChangeAssistant: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 space-y-6 text-text-primary w-full select-none bg-bg-base">
+    <div className="flex-1 h-full overflow-y-auto p-8 space-y-6 text-text-primary w-full select-none bg-bg-base">
       {/* Top Banner: Feature Change Assistant */}
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5 max-w-3xl">

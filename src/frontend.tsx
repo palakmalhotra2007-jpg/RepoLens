@@ -18,7 +18,7 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
     <div
       ref={ref}
       className={cn(
-        "rounded-[6px] border border-border-default bg-bg-surface text-text-primary",
+        "rounded-[6px] border border-[#2d3340] bg-bg-surface text-text-primary",
         className
       )}
       {...props}
@@ -31,7 +31,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col space-y-1 p-4 border-b border-border-default", className)}
+      className={cn("flex flex-col space-y-1 p-4 border-b border-[#2d3340]", className)}
       {...props}
     />
   )
@@ -114,13 +114,13 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
       <div
         ref={ref}
         className={cn(
-          "inline-flex items-center rounded-[4px] border px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] transition-colors leading-none",
+          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.04em] transition-colors leading-none",
           {
-            'bg-[#4C9A6A]/12 text-[#4C9A6A] border-[#4C9A6A]/24': canonical === 'good',
-            'bg-[#C99A3C]/12 text-[#C99A3C] border-[#C99A3C]/24': canonical === 'warn',
-            'bg-[#B54A4A]/12 text-[#B54A4A] border-[#B54A4A]/24': canonical === 'critical',
-            'bg-[#4FA3D9]/12 text-[#4FA3D9] border-[#4FA3D9]/24': canonical === 'accent',
-            'bg-[#9AA1AA]/12 text-[#9AA1AA] border-[#9AA1AA]/24': canonical === 'neutral',
+            'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': canonical === 'good',
+            'bg-amber-500/10 text-amber-400 border border-amber-500/20': canonical === 'warn',
+            'bg-rose-500/10 text-rose-400 border border-rose-500/20': canonical === 'critical',
+            'bg-sky-500/10 text-sky-400 border border-sky-500/20': canonical === 'accent',
+            'bg-slate-500/10 text-slate-300 border border-slate-500/20': canonical === 'neutral',
           },
           className
         )}
@@ -145,7 +145,7 @@ export interface StatTileProps {
 
 export const StatTile = ({ title, value, subtext, status }: StatTileProps) => {
   return (
-    <Card className="flex flex-col justify-between p-4 bg-bg-surface border-border-default">
+    <Card className="flex flex-col justify-between p-4 bg-bg-surface border-[#2d3340]">
       <div>
         <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary mb-2">
           {title}
@@ -175,7 +175,7 @@ export const MetricTile = StatTile;
 // ==========================================
 
 export const TabsList = ({ className, children }: { className?: string; children: React.ReactNode }) => (
-  <div className={cn("flex items-center gap-6 border-b border-border-default px-0", className)}>
+  <div className={cn("flex items-center gap-6 border-b border-[#2d3340] px-0", className)}>
     {children}
   </div>
 );
@@ -217,13 +217,13 @@ export const DataTable = ({ children, className }: { children: React.ReactNode; 
 );
 
 export const TableHeader = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <thead className={cn("border-b border-border-default bg-bg-surface-2/40", className)}>
+  <thead className={cn("border-b border-[#2d3340] bg-bg-surface-2/40", className)}>
     <tr>{children}</tr>
   </thead>
 );
 
 export const TableRow = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <tr className={cn("border-b border-border-default hover:bg-bg-surface-2 transition-colors", className)}>
+  <tr className={cn("border-b border-[#2d3340] hover:bg-bg-surface-2 transition-colors", className)}>
     {children}
   </tr>
 );

@@ -46,7 +46,7 @@ const AppShell: React.FC = () => {
   const { isLLMSettingsModalOpen, setIsLLMSettingsModalOpen } = useRepoStore();
   
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0d1117] text-slate-100 overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-screen w-screen bg-bg-base text-text-primary overflow-hidden font-sans select-none">
       {/* Top Navigation */}
       <TopNav />
 
@@ -56,7 +56,7 @@ const AppShell: React.FC = () => {
         <Sidebar />
 
         {/* Dynamic Center Workspace */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-[#0d1117] relative">
+        <main className="flex-1 flex flex-col overflow-hidden bg-bg-base relative">
           <WorkspaceContent />
         </main>
 

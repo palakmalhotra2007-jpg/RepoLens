@@ -38,14 +38,14 @@ export const TopNav: React.FC = () => {
     : 0;
 
   return (
-    <header className="h-10 bg-[#161b22] border-b border-[#30363d] px-4 flex items-center gap-3 z-30 select-none text-xs">
+    <header className="h-10 bg-bg-surface border-b border-[#2d3340] px-4 flex items-center gap-3 z-30 select-none text-xs">
       {/* Left: Brand + Repo Switcher + Branch Switcher */}
       <div className="flex items-center gap-3 flex-shrink-0">
         <div
           onClick={() => setActiveView('overview')}
           className="flex items-center gap-2 cursor-pointer group"
         >
-          <div className="w-6 h-6 rounded-[4px] bg-bg-surface-2 border border-border-default flex items-center justify-center font-bold text-text-primary text-xs">
+          <div className="w-6 h-6 rounded-[4px] bg-gradient-to-br from-accent to-accent/70 border border-accent/30 flex items-center justify-center font-bold text-white text-xs shadow-lg shadow-accent/20">
             RL
           </div>
           <span className="font-semibold text-xs tracking-tight text-text-primary flex items-center gap-1.5">
@@ -54,12 +54,12 @@ export const TopNav: React.FC = () => {
           </span>
         </div>
 
-        <div className="h-4 w-[1px] bg-border-default" />
+        <div className="h-4 w-[1px] bg-[#2d3340]" />
 
         {/* Current Active Repo Selector */}
         <button
           onClick={() => setIsConnectModalOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-bg-surface-2 hover:bg-[#262B31] border border-border-default text-text-primary transition-colors font-mono text-[11px]"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-[#1a1f26] hover:bg-[#262B31] border border-[#2d3340] text-text-primary transition-colors font-mono text-[11px]"
           title="Switch repository or upload ZIP/connect GitHub"
         >
           <FolderGit2 strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
@@ -73,7 +73,7 @@ export const TopNav: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-bg-surface-2 hover:bg-[#262B31] border border-border-default text-text-secondary font-mono text-[11px] transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-[#1a1f26] hover:bg-[#262B31] border border-[#2d3340] text-text-secondary font-mono text-[11px] transition-colors"
           >
             <GitBranch strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
             <span className="max-w-[120px] truncate">{repo.currentBranch}</span>
@@ -81,8 +81,8 @@ export const TopNav: React.FC = () => {
           </button>
 
           {isBranchDropdownOpen && (
-            <div className="absolute left-0 mt-1 w-56 rounded-[6px] bg-bg-surface border border-border-default shadow-[0_4px_12px_rgba(0,0,0,0.4)] p-1 z-50 font-mono text-xs">
-              <div className="px-2 py-1 text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] border-b border-border-default mb-1">
+            <div className="absolute left-0 mt-1 w-56 rounded-[6px] bg-bg-surface border border-[#2d3340] shadow-[0_4px_12px_rgba(0,0,0,0.4)] p-1 z-50 font-mono text-xs">
+              <div className="px-2 py-1 text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em] border-b border-[#2d3340] mb-1">
                 Switch Branch
               </div>
               {repo.branches.map((b) => (
@@ -108,7 +108,7 @@ export const TopNav: React.FC = () => {
 
         {/* Audio Speaking State in Top Bar */}
         {voicePlayback.isPlaying && (
-          <div className="hidden lg:flex items-center gap-2 px-2.5 py-0.5 rounded-[4px] bg-accent/12 border border-accent/24 text-accent font-mono text-[11px]">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-mono text-[11px]">
             <Volume2 strokeWidth={1.5} className="w-3.5 h-3.5 text-accent" />
             <span>Agent Speaking ({voicePlayback.speakingAgentId})</span>
             <button
@@ -126,15 +126,15 @@ export const TopNav: React.FC = () => {
       <div className="flex-1 min-w-0 hidden md:block">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] text-slate-400 text-xs transition-all group"
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-[6px] bg-bg-surface-2 hover:bg-bg-surface border border-border-default text-text-secondary text-xs transition-all group"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 flex-shrink-0" />
-            <span className="text-slate-400 group-hover:text-slate-200 truncate">
+            <Search className="w-3.5 h-3.5 text-text-tertiary group-hover:text-accent flex-shrink-0" />
+            <span className="text-text-secondary group-hover:text-text-primary truncate">
               Search files, symbols, routes, or ask AI...
             </span>
           </div>
-          <kbd className="px-1.5 py-0.5 rounded bg-[#161b22] border border-[#30363d] text-[10px] font-mono text-slate-400 flex-shrink-0 ml-2">
+          <kbd className="px-1.5 py-0.5 rounded bg-bg-surface border border-border-default text-[10px] font-mono text-text-tertiary flex-shrink-0 ml-2">
             ⌘K
           </kbd>
         </button>

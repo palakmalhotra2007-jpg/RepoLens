@@ -141,6 +141,113 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
   const configFiles = fileNodes.filter(f => /\.(config|rc)\.(ts|js|json)$/i.test(f.name) || ['package.json', '.gitignore', '.eslintrc'].includes(f.name));
   const docFiles = fileNodes.filter(f => /\.(md|txt|rst)$/i.test(f.name));
   
+  // Detect API routes and database models by analyzing code files
+  const apiRoutes: import('../types/repository').RepositoryData['apiRoutes'] = [];
+  const databaseModels: import('../types/repository').RepositoryData['databaseModels'] = [];
+  
+  // Look for API route files
+  const routeFiles = fileNodes.filter(f => 
+    /routes?|api|controllers?|endpoints?/i.test(f.path) && 
+    /\.(ts|js|tsx|jsx)$/i.test(f.name)
+  );
+  
+  for (const routeFile of routeFiles.slice(0, 10)) {
+    try {
+      const content = await fetchRawFileContent(`${owner}/${repo}`, defaultBranch, routeFile.path);
+      routeFile.content = content;
+      routeFile.symbols = extractCodeSymbols(routeFile.name, content);
+      
+      // Extract API routes from content
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        const trimmed = line.trim();
+        const routeMatch = trimmed.match(/(?:app|router|[a-zA-Z]+Router)\.(get|post|put|delete|patch)\(\s*['"`]([^'"`]+)['"`]/i);
+        if (routeMatch) {
+          const method = routeMatch[1].toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+          const path = routeMatch[2];
+          
+          // Try to find handler function
+          const handlerMatch = trimmed.match(/,\s*([a-zA-Z0-9_$]+)/) || trimmed.match(/=>\s*\{/);
+          const handlerSymbol = handlerMatch ? handlerMatch[1] || 'inline' : 'handler';
+          
+          // Check for auth middleware
+          const authRequired = /auth|authenticate|protect|guard|requireAuth/i.test(line);
+          
+          apiRoutes.push({
+            method,
+            path,
+            handlerFile: routeFile.path,
+            handlerSymbol,
+            authRequired,
+            description: `${method} ${path}`,
+          });
+        }
+      });
+    } catch (e) {
+      console.warn(`Failed to analyze route file ${routeFile.path}:`, e);
+    }
+  }
+  
+  // Look for database model files
+  const modelFiles = fileNodes.filter(f => 
+    (/models?|schema|entities/i.test(f.path) && /\.(ts|js|prisma)$/i.test(f.name)) ||
+    f.name === 'schema.prisma'
+  );
+  
+  for (const modelFile of modelFiles.slice(0, 10)) {
+    try {
+      const content = await fetchRawFileContent(`${owner}/${repo}`, defaultBranch, modelFile.path);
+      modelFile.content = content;
+      modelFile.symbols = extractCodeSymbols(modelFile.name, content);
+      
+      // Extract database models
+      if (modelFile.name.endsWith('.prisma')) {
+        // Parse Prisma models
+        const modelMatches = content.matchAll(/model\s+([a-zA-Z0-9_]+)\s*\{([^}]+)\}/g);
+        for (const match of modelMatches) {
+          const modelName = match[1];
+          const modelBody = match[2];
+          const fields = modelBody.split('\n').filter(l => l.trim() && !l.trim().startsWith('//'));
+          const fieldsCount = fields.length;
+          
+          // Extract relations
+          const relations = modelBody.match(/@relation\([^)]*\)|@relation/g) || [];
+          
+          databaseModels.push({
+            name: modelName,
+            tableName: modelName.toLowerCase(),
+            file: modelFile.path,
+            fieldsCount,
+            relations: relations.map(r => r.replace(/@relation\(["']([^"']+)["']\)/, '$1')),
+          });
+        }
+      } else {
+        // Parse TypeScript/JavaScript models
+        const classMatches = content.matchAll(/(?:export\s+)?class\s+([a-zA-Z0-9_]+)(?:\s+extends\s+[a-zA-Z0-9_]+)?\s*\{([^}]+)\}/g);
+        for (const match of classMatches) {
+          const className = match[1];
+          const classBody = match[2];
+          
+          // Count properties/fields
+          const fieldMatches = classBody.matchAll(/^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z0-9_$]+)(?:\?)?:\s*([^;=\n]+)/gm);
+          const fields = Array.from(fieldMatches);
+          
+          if (fields.length > 0) {
+            databaseModels.push({
+              name: className,
+              tableName: className.toLowerCase(),
+              file: modelFile.path,
+              fieldsCount: fields.length,
+              relations: fields.filter(f => f[2].includes('[]') || /^[A-Z]/.test(f[2].trim())).map(f => f[1]),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`Failed to analyze model file ${modelFile.path}:`, e);
+    }
+  }
+  
   // Parse dependencies from package.json if exists
   const dependencies: import('../types/repository').DependencyItem[] = [];
   const packageJsonNode = fileMap.get('package.json');
@@ -250,8 +357,8 @@ export async function fetchGitHubRepository(repoUrlOrSlug: string): Promise<Repo
       dataFlowSummary: `GitHub repository with ${branches.length} branch${branches.length !== 1 ? 'es' : ''}, ${totalLines.toLocaleString()} lines of code.`
     },
     dependencies: dependencies,
-    apiRoutes: [],
-    databaseModels: [],
+    apiRoutes: apiRoutes,
+    databaseModels: databaseModels,
     rootFiles: rootNodes,
   };
 }

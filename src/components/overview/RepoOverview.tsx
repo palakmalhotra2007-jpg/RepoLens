@@ -75,13 +75,6 @@ export const RepoOverview: React.FC = () => {
           <Button variant="primary" size="sm" onClick={() => setActiveTab('explorer')}>
             Code Explorer
           </Button>
-          <Button variant="primary" size="sm">
-            Export
-          </Button>
-          {/* Max one Accent button per screen */}
-          <Button variant="accent" size="sm">
-            Run AI Audit
-          </Button>
         </div>
       </div>
 
@@ -215,31 +208,40 @@ export const RepoOverview: React.FC = () => {
               <h3 className="text-[15px] font-semibold text-text-primary">Discovered API Routes</h3>
             </CardHeader>
             <CardContent className="p-0">
-              <DataTable>
-                <TableHeader>
-                  <TableCell isHeader>Route</TableCell>
-                  <TableCell isHeader>Handler</TableCell>
-                  <TableCell isHeader>Auth</TableCell>
-                </TableHeader>
-                <tbody>
-                  {repo.apiRoutes.map((r, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-mono text-xs text-text-primary">
-                        <span className="mr-2 text-text-tertiary font-medium">{r.method}</span>
-                        {r.path}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-text-secondary">{r.handlerFile}</TableCell>
-                      <TableCell>
-                        {r.authRequired ? (
-                          <Badge variant="critical">Guarded</Badge>
-                        ) : (
-                          <Badge variant="good">Public</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </tbody>
-              </DataTable>
+              {repo.apiRoutes.length > 0 ? (
+                <DataTable>
+                  <TableHeader>
+                    <TableCell isHeader>Route</TableCell>
+                    <TableCell isHeader>Handler</TableCell>
+                    <TableCell isHeader>Auth</TableCell>
+                  </TableHeader>
+                  <tbody>
+                    {repo.apiRoutes.map((r, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-mono text-xs text-text-primary">
+                          <span className="mr-2 text-text-tertiary font-medium">{r.method}</span>
+                          {r.path}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-text-secondary">{r.handlerFile}</TableCell>
+                        <TableCell>
+                          {r.authRequired ? (
+                            <Badge variant="critical">Guarded</Badge>
+                          ) : (
+                            <Badge variant="good">Public</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </tbody>
+                </DataTable>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <p className="text-sm text-text-secondary">No API routes detected</p>
+                  <p className="text-xs text-text-tertiary">
+                    API routes are automatically detected from Express, Fastify, or similar frameworks
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -248,18 +250,29 @@ export const RepoOverview: React.FC = () => {
               <h3 className="text-[15px] font-semibold text-text-primary">Database Models</h3>
             </CardHeader>
             <CardContent className="space-y-3">
-              {repo.databaseModels.map((m, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 flex items-center justify-between"
-                >
-                  <div>
-                    <div className="text-[14px] font-medium text-text-primary">model {m.name}</div>
-                    <div className="text-[11px] text-text-tertiary font-mono mt-0.5">{m.file}</div>
-                  </div>
-                  <span className="text-xs font-mono text-text-secondary">{m.fieldsCount} columns</span>
+              {repo.databaseModels.length > 0 ? (
+                <>
+                  {repo.databaseModels.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="text-[14px] font-medium text-text-primary">model {m.name}</div>
+                        <div className="text-[11px] text-text-tertiary font-mono mt-0.5">{m.file}</div>
+                      </div>
+                      <span className="text-xs font-mono text-text-secondary">{m.fieldsCount} columns</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <p className="text-sm text-text-secondary">No database models detected</p>
+                  <p className="text-xs text-text-tertiary">
+                    Models are detected from Prisma schemas, TypeORM entities, or similar ORM patterns
+                  </p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>
@@ -272,24 +285,33 @@ export const RepoOverview: React.FC = () => {
             <h3 className="text-[15px] font-semibold text-text-primary">Direct Dependencies</h3>
           </CardHeader>
           <CardContent className="p-0">
-            <DataTable>
-              <TableHeader>
-                <TableCell isHeader>Package</TableCell>
-                <TableCell isHeader>Version</TableCell>
-                <TableCell isHeader>Type</TableCell>
-              </TableHeader>
-              <tbody>
-                {repo.dependencies.map((dep, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="text-[13px] font-medium text-text-primary">{dep.name}</TableCell>
-                    <TableCell className="font-mono text-xs text-text-secondary">{dep.version}</TableCell>
-                    <TableCell>
-                      <Badge variant="neutral">{dep.type}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </DataTable>
+            {repo.dependencies.length > 0 ? (
+              <DataTable>
+                <TableHeader>
+                  <TableCell isHeader>Package</TableCell>
+                  <TableCell isHeader>Version</TableCell>
+                  <TableCell isHeader>Type</TableCell>
+                </TableHeader>
+                <tbody>
+                  {repo.dependencies.map((dep, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="text-[13px] font-medium text-text-primary">{dep.name}</TableCell>
+                      <TableCell className="font-mono text-xs text-text-secondary">{dep.version}</TableCell>
+                      <TableCell>
+                        <Badge variant="neutral">{dep.type}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </tbody>
+              </DataTable>
+            ) : (
+              <div className="p-8 text-center space-y-2">
+                <p className="text-sm text-text-secondary">No dependencies detected</p>
+                <p className="text-xs text-text-tertiary">
+                  Dependencies are parsed from package.json, requirements.txt, or similar manifest files
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -302,19 +324,30 @@ export const RepoOverview: React.FC = () => {
               <h3 className="text-[15px] font-semibold text-text-primary">Maintenance Hotspots</h3>
             </CardHeader>
             <CardContent className="space-y-3">
-              {repo.hotspots.map((h) => (
-                <div
-                  key={h.id}
-                  className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-medium text-text-primary">{h.functionName}()</span>
-                    <Badge variant="critical">Risk: {h.riskScore}%</Badge>
-                  </div>
-                  <div className="text-[11px] text-text-tertiary font-mono">{h.file}</div>
-                  <p className="text-[13px] text-text-secondary">{h.reason}</p>
+              {repo.hotspots.length > 0 ? (
+                <>
+                  {repo.hotspots.map((h) => (
+                    <div
+                      key={h.id}
+                      className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-medium text-text-primary">{h.functionName}()</span>
+                        <Badge variant="critical">Risk: {h.riskScore}%</Badge>
+                      </div>
+                      <div className="text-[11px] text-text-tertiary font-mono">{h.file}</div>
+                      <p className="text-[13px] text-text-secondary">{h.reason}</p>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <p className="text-sm text-text-secondary">No hotspots detected</p>
+                  <p className="text-xs text-text-tertiary">
+                    Hotspots are identified by analyzing code complexity, change frequency, and potential risk areas
+                  </p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
           
@@ -323,19 +356,30 @@ export const RepoOverview: React.FC = () => {
               <h3 className="text-[15px] font-semibold text-text-primary">Dead Code Candidates</h3>
             </CardHeader>
             <CardContent className="space-y-3">
-              {repo.deadCodeItems.map((d) => (
-                <div
-                  key={d.id}
-                  className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-medium text-text-primary">{d.symbolName}</span>
-                    <Badge variant="warn">~{d.estimatedSavingLines} LOC</Badge>
-                  </div>
-                  <div className="text-[11px] text-text-tertiary font-mono">{d.file}:{d.line}</div>
-                  <p className="text-[13px] text-text-secondary">{d.suggestion}</p>
+              {repo.deadCodeItems.length > 0 ? (
+                <>
+                  {repo.deadCodeItems.map((d) => (
+                    <div
+                      key={d.id}
+                      className="p-4 border border-border-default rounded-[6px] bg-bg-surface-2 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-medium text-text-primary">{d.symbolName}</span>
+                        <Badge variant="warn">~{d.estimatedSavingLines} LOC</Badge>
+                      </div>
+                      <div className="text-[11px] text-text-tertiary font-mono">{d.file}:{d.line}</div>
+                      <p className="text-[13px] text-text-secondary">{d.suggestion}</p>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <p className="text-sm text-text-secondary">No dead code detected</p>
+                  <p className="text-xs text-text-tertiary">
+                    Dead code is identified by analyzing unused exports, unreferenced functions, and orphaned files
+                  </p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>

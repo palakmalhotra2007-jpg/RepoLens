@@ -64,9 +64,10 @@ export const ReviewPanel: React.FC = () => {
         {/* Hero Header */}
         <Card className="p-8 space-y-4 text-center">
           <div className="inline-flex">
-            <Badge variant="neutral">
-              Multi-Agent Code Review & Debate Ensemble
-            </Badge>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-medium tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              MULTI-AGENT CODE REVIEW & DEBATE ENSEMBLE
+            </span>
           </div>
 
           <div className="space-y-2 max-w-2xl mx-auto">
@@ -122,7 +123,7 @@ export const ReviewPanel: React.FC = () => {
                     {agent.focusAreas.map((fa, fIdx) => (
                       <span
                         key={fIdx}
-                        className="px-2 py-0.5 rounded-[4px] bg-bg-surface-2 text-text-secondary text-[11px] border border-border-default"
+                        className="px-2 py-0.5 rounded-full bg-bg-surface-2 text-text-secondary text-[11px] border border-border-default"
                       >
                         {fa}
                       </span>
@@ -131,27 +132,6 @@ export const ReviewPanel: React.FC = () => {
                 </div>
               </Card>
             ))}
-
-            {/* Pipeline Stage Card */}
-            <Card className="p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary mb-1">
-                  CONSENSUS PIPELINE
-                </div>
-                <h3 className="text-[15px] font-semibold text-text-primary">Cross-Agent Debate Protocol</h3>
-                <p className="text-[13px] text-text-secondary mt-1.5 leading-relaxed font-normal">
-                  Agents challenge findings to eliminate false positives and synthesize verified fix diffs.
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-border-default text-xs font-mono text-text-secondary space-y-1.5">
-                <div>1. Independent Analysis</div>
-                <div>2. Cross-Agent Challenge</div>
-                <div>3. Debate & Rebuttal</div>
-                <div>4. Evidence Verification</div>
-                <div>5. Consensus Ruling</div>
-              </div>
-            </Card>
           </div>
         </div>
       </div>
@@ -177,7 +157,7 @@ export const ReviewPanel: React.FC = () => {
             <p className="text-xs text-text-secondary font-mono">{reviewProgress.label}</p>
           </div>
 
-          {/* Progress Bar (Flat color, no gradients) */}
+          {/* Progress Bar */}
           <div className="space-y-1.5 max-w-md mx-auto font-mono">
             <div className="flex justify-between text-xs text-text-secondary">
               <span>Overall Progress</span>
@@ -191,14 +171,14 @@ export const ReviewPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* Active Agents Indicator */}
-          <div className="grid grid-cols-5 gap-2 max-w-lg mx-auto pt-2 font-mono text-[11px]">
+          {/* Active Agents Indicator - Generous width, clean responsive layout with no text overflow */}
+          <div className="grid grid-cols-5 gap-2 max-w-2xl mx-auto pt-2 text-[11px]">
             {reviewAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="p-2.5 rounded-[4px] bg-bg-surface-2 border border-border-default flex flex-col items-center gap-1"
+                className="px-2.5 py-2.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex flex-col items-center justify-center gap-1.5 min-w-0"
               >
-                <span className="truncate text-text-primary">{agent.shortName}</span>
+                <span className="truncate w-full text-center text-text-primary font-medium">{agent.shortName}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               </div>
             ))}

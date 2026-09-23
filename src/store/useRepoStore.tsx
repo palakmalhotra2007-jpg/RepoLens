@@ -280,6 +280,8 @@ interface RepoStoreContextType {
   setIsSettingsModalOpen: (open: boolean) => void;
   isLLMSettingsModalOpen: boolean;
   setIsLLMSettingsModalOpen: (open: boolean) => void;
+  isVoiceSettingsModalOpen: boolean;
+  setIsVoiceSettingsModalOpen: (open: boolean) => void;
   isRightPanelOpen: boolean;
   setIsRightPanelOpen: (open: boolean) => void;
 
@@ -371,6 +373,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isLLMSettingsModalOpen, setIsLLMSettingsModalOpen] = useState(false);
+  const [isVoiceSettingsModalOpen, setIsVoiceSettingsModalOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
 
   // Custom setActiveView that closes Context Panel when leaving Impact view
@@ -1107,6 +1110,8 @@ Feel free to ask for deeper file-level breakdowns, line-by-line refactoring plan
     setIsSettingsModalOpen,
     isLLMSettingsModalOpen,
     setIsLLMSettingsModalOpen,
+    isVoiceSettingsModalOpen,
+    setIsVoiceSettingsModalOpen,
     isRightPanelOpen,
     setIsRightPanelOpen,
 

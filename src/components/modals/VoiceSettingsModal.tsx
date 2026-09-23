@@ -34,9 +34,9 @@ export const VoiceSettingsModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 select-none">
-      <div className="w-full max-w-xl bg-bg-surface border border-border-default rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col">
+      <div className="w-full max-w-xl bg-bg-surface border border-[#2d3340] rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-border-default flex items-center justify-between bg-bg-surface">
+        <div className="p-4 border-b border-[#2d3340] flex items-center justify-between bg-bg-surface">
           <div className="flex items-center gap-2">
             <Volume2 strokeWidth={1.5} className="w-4 h-4 text-text-secondary" />
             <div>
@@ -62,7 +62,7 @@ export const VoiceSettingsModal: React.FC = () => {
         <div className="p-5 space-y-4 text-xs">
           {/* Master Toggles */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-between">
+            <div className="p-3.5 rounded-[6px] bg-[#1a1f26] border border-[#2d3340] flex items-center justify-between">
               <div>
                 <div className="font-medium text-text-primary">Enable Agent Voice</div>
                 <div className="text-[10px] text-text-secondary">Speech synthesis for briefings & debate</div>
@@ -77,7 +77,7 @@ export const VoiceSettingsModal: React.FC = () => {
               />
             </div>
 
-            <div className="p-3.5 rounded-[6px] bg-bg-surface-2 border border-border-default flex items-center justify-between">
+            <div className="p-3.5 rounded-[6px] bg-[#1a1f26] border border-[#2d3340] flex items-center justify-between">
               <div>
                 <div className="font-medium text-text-primary">Auto-Speak Responses</div>
                 <div className="text-[10px] text-text-secondary">Automatically speak chat answers</div>
@@ -110,8 +110,8 @@ export const VoiceSettingsModal: React.FC = () => {
                     onClick={() => setSelectedAgentId(a.id)}
                     className={`p-2.5 rounded-[4px] border text-center transition-colors flex flex-col items-center gap-1 ${
                       isSelected
-                        ? 'bg-bg-surface-2 border-accent text-text-primary font-medium'
-                        : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
+                        ? 'bg-[#1a1f26] border-accent text-text-primary font-medium'
+                        : 'bg-[#1a1f26] border-[#2d3340] text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     <span className="text-[10px] truncate w-full">{a.shortName}</span>
@@ -122,7 +122,7 @@ export const VoiceSettingsModal: React.FC = () => {
           </div>
 
           {/* Global Voice Speed & Pitch Tuners */}
-          <div className="p-4 rounded-[6px] bg-bg-surface-2 border border-border-default space-y-3">
+          <div className="p-4 rounded-[6px] bg-[#1a1f26] border border-[#2d3340] space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-semibold text-text-primary text-xs">
@@ -197,7 +197,7 @@ export const VoiceSettingsModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-bg-surface border-t border-border-default">
+        <div className="p-4 bg-bg-surface border-t border-[#2d3340]">
           <Button
             variant="primary"
             onClick={() => {

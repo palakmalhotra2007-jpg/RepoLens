@@ -112,41 +112,43 @@ export const ImpactGraphView: React.FC = () => {
       </div>
 
       {/* Main Canvas Area */}
-      {viewMode === 'graph' ? (
-        <div className="flex-1 flex h-full overflow-hidden relative">
-          <div className="flex-1 h-full relative">
-            <ReactFlow
-              nodes={nodes.map((n) => ({
-                ...n,
-                selected: n.id === selectedImpactNodeId,
-              }))}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onNodeClick={onNodeClick}
-              nodeTypes={nodeTypes}
-              fitView
-              attributionPosition="bottom-left"
-            >
-              <Background color="#262B31" gap={20} size={1} variant={BackgroundVariant.Dots} />
-              <Controls />
-              <MiniMap
-                nodeStrokeColor="#383F47"
-                nodeColor="#1B1F24"
-              />
-            </ReactFlow>
-          </div>
+      <div className="flex-1 flex overflow-hidden">
+        {viewMode === 'graph' ? (
+          <>
+            <div className="flex-1 h-full relative">
+              <ReactFlow
+                nodes={nodes.map((n) => ({
+                  ...n,
+                  selected: n.id === selectedImpactNodeId,
+                }))}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeClick={onNodeClick}
+                nodeTypes={nodeTypes}
+                fitView
+                attributionPosition="bottom-left"
+              >
+                <Background color="#262B31" gap={20} size={1} variant={BackgroundVariant.Dots} />
+                <Controls />
+                <MiniMap
+                  nodeStrokeColor="#383F47"
+                  nodeColor="#1B1F24"
+                />
+              </ReactFlow>
+            </div>
 
-          {/* Blast Radius Side Inspector */}
-          <BlastRadiusPanel
-            selectedNodeId={selectedImpactNodeId}
-            nodes={nodes}
-            edges={edges}
-          />
-        </div>
-      ) : (
-        <ChangeAssistant />
-      )}
+            {/* Blast Radius Side Inspector */}
+            <BlastRadiusPanel
+              selectedNodeId={selectedImpactNodeId}
+              nodes={nodes}
+              edges={edges}
+            />
+          </>
+        ) : (
+          <ChangeAssistant />
+        )}
+      </div>
     </div>
   );
 };

@@ -73,7 +73,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-56 bg-bg-base border-r border-border-default flex flex-col justify-between select-none flex-shrink-0 text-xs h-full">
+    <aside className="w-60 bg-bg-base border-r border-border-default flex flex-col justify-between select-none flex-shrink-0 text-xs h-full">
       {/* Navigation Links */}
       <div className="p-2 space-y-1">
         <div className="px-3 py-2 text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
@@ -104,9 +104,19 @@ export const Sidebar: React.FC = () => {
               </div>
 
               {item.badge && (
-                <Badge variant={item.badgeVariant || 'neutral'} className="ml-1 text-[10px]">
+                <span
+                  className={`ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono tracking-tight flex-shrink-0 leading-tight ${
+                    item.badgeVariant === 'critical'
+                      ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
+                      : item.badgeVariant === 'accent'
+                      ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20 font-semibold'
+                      : item.badgeVariant === 'warn'
+                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                      : 'bg-white/[0.04] text-text-tertiary border border-white/[0.06]'
+                  }`}
+                >
                   {item.badge}
-                </Badge>
+                </span>
               )}
             </button>
           );
@@ -114,17 +124,17 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Bottom ENSEMBLE Row */}
-      <div className="border-t border-border-default pt-4 px-3 pb-3 mt-auto">
+      <div className="border-t border-border-default pt-3 px-3 pb-3 mt-auto">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-medium text-text-tertiary uppercase tracking-[0.04em]">
             Ensemble
           </span>
           <span
-            className={`w-1.5 h-1.5 rounded-[4px] ${
+            className={`w-1.5 h-1.5 rounded-full ${
               reviewState === 'completed'
                 ? 'bg-status-good'
                 : reviewState === 'running' || reviewState === 'debating'
-                ? 'bg-status-warn'
+                ? 'bg-status-warn animate-pulse'
                 : 'bg-border-strong'
             }`}
           />
@@ -132,31 +142,31 @@ export const Sidebar: React.FC = () => {
 
         <div className="grid grid-cols-5 gap-1 text-center font-mono text-[11px]">
           <div
-            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
             title="1. Code Quality & Architecture"
           >
             AQ
           </div>
           <div
-            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
             title="2. Security Guardian"
           >
             SG
           </div>
           <div
-            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
             title="3. Performance & Database"
           >
             PD
           </div>
           <div
-            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
             title="4. Testing & Reliability"
           >
             TR
           </div>
           <div
-            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary"
+            className="py-1 rounded-[4px] bg-bg-surface-2 border border-border-default text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
             title="5. Multi-Agent Orchestrator"
           >
             MI

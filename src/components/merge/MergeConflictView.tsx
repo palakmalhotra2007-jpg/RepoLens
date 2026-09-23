@@ -55,85 +55,88 @@ export const MergeConflictView: React.FC = () => {
   // 1. NO COMPARISON AVAILABLE STATE
   if (comparisonState === 'no_comparison') {
     return (
-      <div className="flex-1 overflow-y-auto p-8 text-text-primary max-w-4xl mx-auto text-xs space-y-8 select-none bg-bg-base">
-        <Card className="p-8 space-y-4 text-center">
-          <div className="inline-flex">
-            <Badge variant="neutral">
-              3-Way Version & Branch Comparison
-            </Badge>
-          </div>
-
-          <div className="space-y-2 max-w-xl mx-auto">
-            <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
-              No comparison available.
-            </h2>
-            <p className="text-[13px] text-text-secondary leading-relaxed font-normal">
-              Select two branches or provide an updated version to compare `BASE vs OURS vs THEIRS`, analyze added/deleted/modified files, detect AST collisions, and resolve semantic conflicts.
-            </p>
-          </div>
-
-          {/* Branch Comparator Selector Form */}
-          <div className="p-5 rounded-[6px] bg-bg-surface-2 border border-border-default max-w-lg mx-auto text-left space-y-4 font-mono">
-            {!hasMultipleBranches && (
-              <div className="p-3 rounded-[4px] bg-[#C99A3C]/12 border border-[#C99A3C]/24 text-status-warn text-xs">
-                <AlertTriangle strokeWidth={1.5} className="w-4 h-4 inline mr-1.5" />
-                This repository only has one branch ({repo.defaultBranch}). Branch comparison requires at least 2 branches.
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[11px] uppercase text-text-tertiary font-medium tracking-[0.04em] block mb-1">
-                  Base Branch (Ancestor)
-                </label>
-                <select
-                  value={selectedBaseBranch}
-                  onChange={(e) => setSelectedBaseBranch(e.target.value)}
-                  className="w-full bg-bg-surface border border-border-default rounded-[6px] px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
-                  disabled={!hasMultipleBranches}
-                >
-                  {availableBranches.map((branch) => (
-                    <option key={branch} value={branch}>{branch}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] uppercase text-text-tertiary font-medium tracking-[0.04em] block mb-1">
-                  Compare With (Target / Ours)
-                </label>
-                <select
-                  value={selectedTargetBranch}
-                  onChange={(e) => setSelectedTargetBranch(e.target.value)}
-                  className="w-full bg-bg-surface border border-border-default rounded-[6px] px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
-                  disabled={!hasMultipleBranches}
-                >
-                  {availableBranches.map((branch) => (
-                    <option key={branch} value={branch}>{branch}</option>
-                  ))}
-                </select>
-              </div>
+      <div className="flex-1 overflow-y-auto p-8 text-text-primary w-full text-xs select-none bg-bg-base">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Card className="p-8 space-y-4 text-center">
+            <div className="inline-flex">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-medium tracking-wide">
+                <GitBranch strokeWidth={1.5} className="w-3.5 h-3.5 text-sky-400" />
+                3-WAY VERSION & BRANCH COMPARISON
+              </span>
             </div>
 
-            {/* The single Accent-variant button on this screen */}
-            <Button
-              variant="accent"
-              onClick={() => compareBranches(selectedBaseBranch, selectedTargetBranch)}
-              disabled={!hasMultipleBranches || selectedBaseBranch === selectedTargetBranch}
-              className="w-full py-2"
-            >
-              <GitMerge strokeWidth={1.5} className="w-4 h-4" />
-              <span>
-                {!hasMultipleBranches 
-                  ? 'Multiple Branches Required'
-                  : selectedBaseBranch === selectedTargetBranch
-                  ? 'Select Different Branches'
-                  : 'Run Branch Comparison Analysis'
-                }
-              </span>
-            </Button>
-          </div>
-        </Card>
+            <div className="space-y-2 max-w-xl mx-auto">
+              <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
+                No comparison available.
+              </h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed font-normal">
+                Select two branches or provide an updated version to compare `BASE vs OURS vs THEIRS`, analyze added/deleted/modified files, detect AST collisions, and resolve semantic conflicts.
+              </p>
+            </div>
+
+            {/* Branch Comparator Selector Form */}
+            <div className="p-5 rounded-[6px] bg-bg-surface-2 border border-border-default max-w-lg mx-auto text-left space-y-4 font-mono">
+              {!hasMultipleBranches && (
+                <div className="p-3 rounded-[4px] bg-[#C99A3C]/12 border border-[#C99A3C]/24 text-status-warn text-xs">
+                  <AlertTriangle strokeWidth={1.5} className="w-4 h-4 inline mr-1.5" />
+                  This repository only has one branch ({repo.defaultBranch}). Branch comparison requires at least 2 branches.
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] uppercase text-text-tertiary font-medium tracking-[0.04em] block mb-1">
+                    Base Branch (Ancestor)
+                  </label>
+                  <select
+                    value={selectedBaseBranch}
+                    onChange={(e) => setSelectedBaseBranch(e.target.value)}
+                    className="w-full bg-bg-surface border border-border-default rounded-[6px] px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
+                    disabled={!hasMultipleBranches}
+                  >
+                    {availableBranches.map((branch) => (
+                      <option key={branch} value={branch}>{branch}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] uppercase text-text-tertiary font-medium tracking-[0.04em] block mb-1">
+                    Compare With (Target / Ours)
+                  </label>
+                  <select
+                    value={selectedTargetBranch}
+                    onChange={(e) => setSelectedTargetBranch(e.target.value)}
+                    className="w-full bg-bg-surface border border-border-default rounded-[6px] px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
+                    disabled={!hasMultipleBranches}
+                  >
+                    {availableBranches.map((branch) => (
+                      <option key={branch} value={branch}>{branch}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* The single Accent-variant button on this screen */}
+              <Button
+                variant="accent"
+                onClick={() => compareBranches(selectedBaseBranch, selectedTargetBranch)}
+                disabled={!hasMultipleBranches || selectedBaseBranch === selectedTargetBranch}
+                className="w-full py-2"
+              >
+                <GitMerge strokeWidth={1.5} className="w-4 h-4" />
+                <span>
+                  {!hasMultipleBranches 
+                    ? 'Multiple Branches Required'
+                    : selectedBaseBranch === selectedTargetBranch
+                    ? 'Select Different Branches'
+                    : 'Run Branch Comparison Analysis'
+                  }
+                </span>
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -160,59 +163,61 @@ export const MergeConflictView: React.FC = () => {
   // 3. CLEAN MERGE (NO CONFLICTS)
   if (comparisonState === 'no_conflicts') {
     return (
-      <div className="flex-1 overflow-y-auto p-8 text-text-primary max-w-4xl mx-auto text-xs space-y-6 select-none bg-bg-base">
-        <Card className="p-6 space-y-4 text-center">
-          <CheckCircle2 strokeWidth={1.5} className="w-10 h-10 mx-auto text-status-good" />
-          <div className="space-y-1">
-            <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
-              Fast-Forward Clean Merge Ready
-            </h2>
-            <p className="text-[13px] text-text-secondary">
-              Branches <span className="font-mono text-text-primary font-medium">{branchComparison.currentBranch}</span> and{' '}
-              <span className="font-mono text-text-primary font-medium">{branchComparison.targetBranch}</span> can be automatically merged with zero textual or AST semantic collisions.
-            </p>
-          </div>
+      <div className="flex-1 overflow-y-auto p-8 text-text-primary w-full text-xs select-none bg-bg-base">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card className="p-6 space-y-4 text-center">
+            <CheckCircle2 strokeWidth={1.5} className="w-10 h-10 mx-auto text-status-good" />
+            <div className="space-y-1">
+              <h2 className="text-[20px] font-semibold text-text-primary tracking-tight">
+                Fast-Forward Clean Merge Ready
+              </h2>
+              <p className="text-[13px] text-text-secondary">
+                Branches <span className="font-mono text-text-primary font-medium">{branchComparison.currentBranch}</span> and{' '}
+                <span className="font-mono text-text-primary font-medium">{branchComparison.targetBranch}</span> can be automatically merged with zero textual or AST semantic collisions.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-4 gap-3 max-w-xl mx-auto pt-2 font-mono">
-            <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
-              <span className="text-[10px] text-text-tertiary uppercase block">Added Files</span>
-              <span className="text-sm font-semibold text-text-primary">{branchComparison.addedFiles.length} files</span>
+            <div className="grid grid-cols-4 gap-3 max-w-xl mx-auto pt-2 font-mono">
+              <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
+                <span className="text-[10px] text-text-tertiary uppercase block">Added Files</span>
+                <span className="text-sm font-semibold text-text-primary">{branchComparison.addedFiles.length} files</span>
+              </div>
+              <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
+                <span className="text-[10px] text-text-tertiary uppercase block">Modified Files</span>
+                <span className="text-sm font-semibold text-text-primary">{branchComparison.modifiedFiles.length} files</span>
+              </div>
+              <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
+                <span className="text-[10px] text-text-tertiary uppercase block">Changed Functions</span>
+                <span className="text-sm font-semibold text-text-primary">{branchComparison.changedFunctions.length}</span>
+              </div>
+              <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
+                <span className="text-[10px] text-text-tertiary uppercase block">Conflicts</span>
+                <span className="text-sm font-semibold text-status-good">0</span>
+              </div>
             </div>
-            <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
-              <span className="text-[10px] text-text-tertiary uppercase block">Modified Files</span>
-              <span className="text-sm font-semibold text-text-primary">{branchComparison.modifiedFiles.length} files</span>
-            </div>
-            <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
-              <span className="text-[10px] text-text-tertiary uppercase block">Changed Functions</span>
-              <span className="text-sm font-semibold text-text-primary">{branchComparison.changedFunctions.length}</span>
-            </div>
-            <div className="p-3 rounded-[6px] bg-bg-surface-2 border border-border-default">
-              <span className="text-[10px] text-text-tertiary uppercase block">Conflicts</span>
-              <span className="text-sm font-semibold text-status-good">0</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Change Breakdown */}
-        <Card className="p-5 space-y-3 font-mono">
-          <span className="font-medium text-text-primary text-xs block">
-            Clean Changes Summary:
-          </span>
-          <div className="space-y-2">
-            {branchComparison.addedFiles.map((f, i) => (
-              <div key={i} className="flex items-center gap-2 text-status-good text-[12px]">
-                <FilePlus strokeWidth={1.5} className="w-3.5 h-3.5" />
-                <span>+ {f} (Added)</span>
-              </div>
-            ))}
-            {branchComparison.modifiedFiles.map((f, i) => (
-              <div key={i} className="flex items-center gap-2 text-text-primary text-[12px]">
-                <FileEdit strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary" />
-                <span>~ {f} (Modified)</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+          {/* Change Breakdown */}
+          <Card className="p-5 space-y-3 font-mono">
+            <span className="font-medium text-text-primary text-xs block">
+              Clean Changes Summary:
+            </span>
+            <div className="space-y-2">
+              {branchComparison.addedFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 text-status-good text-[12px]">
+                  <FilePlus strokeWidth={1.5} className="w-3.5 h-3.5" />
+                  <span>+ {f} (Added)</span>
+                </div>
+              ))}
+              {branchComparison.modifiedFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 text-text-primary text-[12px]">
+                  <FileEdit strokeWidth={1.5} className="w-3.5 h-3.5 text-text-tertiary" />
+                  <span>~ {f} (Modified)</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }

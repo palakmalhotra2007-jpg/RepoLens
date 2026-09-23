@@ -4,8 +4,6 @@ import { Button, Badge } from '../../frontend';
 import {
   Send,
   Sparkles,
-  Mic,
-  MicOff,
   Volume2,
   VolumeX,
   FileCode,
@@ -141,59 +139,12 @@ export const RepoCopilotView: React.FC = () => {
 
   const [inputQuery, setInputQuery] = useState('');
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
-  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
-
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInputQuery((prev) => (prev ? `${prev} ${transcript}` : transcript));
-        setIsRecordingVoice(false);
-        inputRef.current?.focus();
-      };
-
-      recognition.onerror = () => {
-        setIsRecordingVoice(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecordingVoice(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, []);
-
-  const startVoiceInput = () => {
-    if (recognitionRef.current) {
-      try {
-        setIsRecordingVoice(true);
-        recognitionRef.current.start();
-      } catch {
-        setIsRecordingVoice(false);
-      }
-    }
-  };
-
-  const stopVoiceInput = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsRecordingVoice(false);
-    }
-  };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,34 +197,34 @@ export const RepoCopilotView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0d1117] overflow-hidden select-none w-full">
-      {/* Top Header: Unified Copilot Bar - Thin Lambda Design */}
-      <div className="h-10 bg-gradient-to-r from-[#0a0e14] via-[#0d1117] to-[#0a0e14] border-b border-[#21262d]/50 px-4 flex items-center justify-between flex-shrink-0 w-full backdrop-blur-sm">
+    <div className="flex-1 flex flex-col h-full bg-bg-base overflow-hidden select-none w-full">
+      {/* Top Header: Unified Copilot Bar */}
+      <div className="h-10 bg-bg-surface border-b border-border-default px-4 flex items-center justify-between flex-shrink-0 w-full">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 flex-shrink-0">
             <Sparkles className="w-3 h-3" strokeWidth={2} />
           </div>
           <div className="min-w-0 flex items-center gap-3">
-            <span className="font-semibold text-white text-xs truncate tracking-tight">
+            <span className="font-semibold text-text-primary text-xs truncate tracking-tight">
               RepoLens Copilot
             </span>
-            <div className="text-[10px] font-mono text-slate-500 truncate flex items-center gap-1.5">
-              <span className="text-slate-400">{repo.name}</span>
-              <span className="text-slate-700">•</span>
-              <span className="text-slate-500">{repo.currentBranch}</span>
+            <div className="text-[10px] font-mono text-text-tertiary truncate flex items-center gap-1.5">
+              <span className="text-text-secondary">{repo.name}</span>
+              <span className="text-border-strong">•</span>
+              <span className="text-text-tertiary">{repo.currentBranch}</span>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons: LLM Settings - Minimal */}
+        {/* Action Buttons: LLM Settings */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsLLMSettingsModalOpen(true)}
-            className="px-2.5 py-1 rounded-md bg-[#161b22] hover:bg-[#1c2128] text-slate-400 hover:text-white text-[10px] flex items-center gap-1.5 font-medium border border-[#30363d] hover:border-indigo-500/50 transition-all duration-200"
+            className="px-2.5 py-1 rounded-md bg-bg-surface-2 hover:bg-bg-surface text-text-secondary hover:text-text-primary text-[10px] flex items-center gap-1.5 font-medium border border-border-default transition-colors"
             title="Configure Ollama / Gemini LLM Provider"
           >
             <Bot className="w-3 h-3" strokeWidth={1.5} />
-            <span className="hidden sm:inline">AI</span>
+            <span className="hidden sm:inline">AI Config</span>
           </button>
         </div>
       </div>
@@ -365,68 +316,25 @@ export const RepoCopilotView: React.FC = () => {
       {/* Chat Input Bar */}
       <div className="p-4 border-t border-border-default bg-bg-surface w-full flex-shrink-0">
         <form onSubmit={handleSend} className="flex items-center gap-2">
-          {/* Voice Mic Button */}
-          <button
-            type="button"
-            onClick={() => {
-              if (isRecordingVoice) {
-                stopVoiceInput();
-              } else {
-                startVoiceInput();
-              }
-            }}
-            className={`p-2.5 rounded-[6px] border transition-colors ${
-              isRecordingVoice
-                ? 'bg-[#B54A4A]/12 text-status-critical border-status-critical'
-                : 'bg-bg-surface-2 border-border-default text-text-secondary hover:text-text-primary'
-            }`}
-            title={isRecordingVoice ? 'Click to stop recording' : 'Voice Input (Speech-to-Text)'}
-          >
-            {isRecordingVoice ? (
-              <MicOff strokeWidth={1.5} className="w-4 h-4 text-status-critical" />
-            ) : (
-              <Mic strokeWidth={1.5} className="w-4 h-4" />
-            )}
-          </button>
-
           <input
             ref={inputRef}
             type="text"
-            placeholder={
-              isRecordingVoice
-                ? 'Listening... Speak now.'
-                : `Ask RepoLens Copilot anything about ${repo.name}...`
-            }
+            placeholder={`Ask RepoLens Copilot anything about ${repo.name}...`}
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             className="flex-1 bg-bg-surface-2 border border-border-default rounded-[6px] px-3.5 py-2 text-xs text-text-primary placeholder-text-tertiary focus:outline-none focus:border-border-strong font-mono"
-            disabled={isRecordingVoice}
           />
 
           <Button
             type="submit"
             variant="primary"
-            disabled={!inputQuery.trim() || isRecordingVoice}
+            disabled={!inputQuery.trim()}
             className="gap-1.5"
           >
             <Send strokeWidth={1.5} className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Send</span>
           </Button>
         </form>
-        
-        {/* Voice recording hint */}
-        {isRecordingVoice && (
-          <div className="mt-2 text-center space-y-1">
-            <p className="text-xs text-rose-400 font-mono flex items-center justify-center gap-2">
-              <span className="animate-pulse">●</span>
-              Recording... Speak clearly into your microphone
-              <span className="animate-pulse">●</span>
-            </p>
-            <p className="text-[10px] text-slate-500">
-              Check browser console (F12) for detailed status
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
